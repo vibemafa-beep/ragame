@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Vibe Game — Бесконечный мир Дровосека</title>
     <!-- Подключаем ваш внешний файл стилей -->
     <link rel="stylesheet" href="style.css">
@@ -17,7 +17,7 @@
     <!-- Основная рабочая зона сайта -->
     <div class="main-wrapper">
         
-        <!-- БОЛЬШОЙ БАННЕР (300x250) -->
+        <!-- БОЛЬШОЙ БАННЕР (300x250) — скрывается на мобилке через CSS -->
         <aside class="ad-sidebar">
             <script type="text/javascript">
               atOptions = {
@@ -33,7 +33,10 @@
 
         <!-- ИГРОВОЙ ЭКРАН -->
         <main class="game-container">
-            <iframe src="game.html" style="width:100%; height:100%; border:none;"></iframe>
+            <iframe src="game.html" 
+                    style="width:100%; height:100%; border:none; touch-action:none;" 
+                    allow="fullscreen">
+            </iframe>
         </main>
 
     </div>
