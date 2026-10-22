@@ -11,6 +11,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    min-height: 100dvh; /* Учитывает адресную строку на мобилках */
 }
 
 /* ШАПКА САЙТА */
@@ -44,6 +45,13 @@ body {
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
     overflow: hidden;
+    touch-action: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.game-container iframe {
+    touch-action: none;
+    display: block;
 }
 
 /* БОКОВЫЕ РЕКЛАМНЫЕ БЛОКИ (Формат 300x250) */
@@ -64,13 +72,13 @@ body {
     margin: 0 auto;
 }
 
-/* НИЖНИЙ РЕКЛАМНЫЙ БЛОК — ИСПРАВЛЕН ПОД 320x50 ДЛЯ ВСЕХ УСТРОЙСТВ */
+/* НИЖНИЙ РЕКЛАМНЫЙ БЛОК — 320x50 ДЛЯ ВСЕХ УСТРОЙСТВ */
 .ad-bottom {
-    width: 320px; /* Фиксированный размер под ваш новый баннер */
+    width: 320px;
     height: 50px;
     background-color: #1e1e1e;
     border: 1px dashed #444;
-    margin: 15px auto 20px auto; /* Центрируем снизу и делаем красивый отступ */
+    margin: 15px auto 20px auto;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -92,24 +100,30 @@ body {
         gap: 15px;
     }
 
-    /* Оставляем отображение квадратной рекламы на смартфонах по центру над игрой */
+    /* Скрываем боковую рекламу 300x250 на мобилке — даём игре больше места */
     .ad-sidebar {
-        display: flex;
-        width: 300px;
-        height: 250px;
-        margin: 0 auto;
+        display: none !important;
     }
 
     /* Подстраиваем игровое окно под ширину экрана смартфона */
     .game-container {
         width: 100%;
         max-width: 100%;
-        height: 450px;
+        height: 75vh;
+        min-height: 480px;
     }
 
-    /* Нижний баннер больше не скрываем, он отлично подходит для телефонов */
+    /* Нижний баннер показываем — он отлично подходит для телефонов */
     .ad-bottom {
         display: flex !important;
         margin: 10px auto 20px auto;
+    }
+}
+
+/* НА ДЕСКТОПЕ — ЧУТЬ БОЛЬШЕ ОКНО */
+@media (min-width: 1151px) {
+    .game-container {
+        max-width: 900px;
+        height: 600px;
     }
 }
