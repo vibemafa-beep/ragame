@@ -1,176 +1,3243 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-    <title>Vibe Lumberjack Endless World</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #0b0f19;
-            color: #fff;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            user-select: none;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Некромант — Волны</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #0a0612;
+    font-family: Arial, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  canvas { display: block; touch-action: none; }
 
-        /* Игровой экран */
-        .game-wrapper {
-            position: relative;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #141d26;
-        }
+  #joystick {
+    position: fixed;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(120, 40, 180, 0.10);
+    border: 2px solid rgba(160, 80, 220, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    transform: translate(-50%, -50%);
+  }
+  #joystick.visible { opacity: 1; }
+  #stick {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 60px; height: 60px;
+    margin-left: -30px; margin-top: -30px;
+    border-radius: 50%;
+    background: rgba(180, 100, 255, 0.9);
+    box-shadow: 0 0 25px rgba(180, 100, 255, 0.8);
+  }
 
-        canvas {
-            display: block;
-            background: #1b2836;
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
-        }
+  #raiseBtn {
+    position: fixed;
+    right: 30px;
+    bottom: 60px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #7a3fb8, #2d0d4f);
+    border: 3px solid rgba(200, 130, 255, 0.6);
+    color: #fff;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 30px rgba(160, 80, 220, 0.6);
+    transition: transform 0.1s, opacity 0.2s;
+    user-select: none;
+    pointer-events: auto;
+    touch-action: none;
+    opacity: 0.9;
+    z-index: 10;
+  }
+  #raiseBtn:active { transform: scale(0.92); }
+  #raiseBtn.disabled { opacity: 0.35; filter: grayscale(0.6); }
+  #raiseBtn .badge {
+    position: absolute;
+    top: -5px; right: -5px;
+    background: #7affc0;
+    color: #0a0612;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 24px;
+    text-align: center;
+    display: none;
+    pointer-events: none;
+  }
+  #raiseBtn .badge.show { display: block; }
 
-        /* Боковая панель улучшений внутри игры */
-        .ui-panel {
-            width: 260px;
-            background: #0f172a;
-            border-left: 2px solid #1e293b;
-            display: flex;
-            flex-direction: column;
-            padding: 15px;
-            box-sizing: border-box;
-            overflow-y: auto;
-        }
+  #summonBtn, #dismissBtn {
+    position: fixed;
+    right: 40px;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #5a3fa8, #1a0d3f);
+    border: 2px solid rgba(180, 130, 255, 0.6);
+    color: #fff;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(140, 80, 220, 0.5);
+    transition: transform 0.1s, opacity 0.2s, border-color 0.2s, background 0.2s;
+    user-select: none;
+    pointer-events: auto;
+    touch-action: none;
+    opacity: 0.95;
+    z-index: 11;
+  }
+  #summonBtn:active, #dismissBtn:active { transform: scale(0.9); }
+  #summonBtn.disabled, #dismissBtn.disabled { opacity: 0.35; filter: grayscale(0.6); }
 
-        .stat-box {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            text-align: center;
-        }
+  #summonBtn { bottom: 190px; }
+  #dismissBtn { bottom: 275px; }
 
-        .stat-value {
-            font-size: 20px;
-            font-weight: bold;
-            color: #00ffcc;
-        }
+  #dismissBtn.active {
+    background: radial-gradient(circle at 30% 30%, #d04040, #4a0808);
+    border-color: #ff6060;
+    box-shadow: 0 0 30px rgba(255, 80, 80, 0.9);
+  }
 
-        .stat-label {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
+  #summonBtn .badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: #7affc0;
+    color: #0a0612;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 20px;
+    text-align: center;
+    display: none;
+    pointer-events: none;
+  }
+  #summonBtn .badge.show { display: block; }
 
-        .upgrade-btn {
-            background: linear-gradient(90deg, #2563eb, #3b82f6);
-            border: none;
-            color: white;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            transition: opacity 0.2s;
-        }
+  #hud {
+    position: fixed;
+    top: 12px; left: 12px;
+    color: #e6d4ff;
+    font-family: monospace;
+    font-size: 13px;
+    pointer-events: none;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    line-height: 1.5;
+    z-index: 20;
+  }
+  #hud .souls { color: #b07aff; font-weight: bold; font-size: 16px; }
+  #hud .army  { color: #7affc0; }
 
-        .upgrade-btn:disabled {
-            background: #1e293b;
-            color: #64748b;
-            cursor: not-allowed;
-        }
+  #timeBar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 6px;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    pointer-events: none;
+  }
+  #timeBarFill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #f0c040, #f0a030);
+    transition: background 0.3s, width 0.1s linear;
+  }
 
-        .upgrade-btn span {
-            font-size: 11px;
-            color: #93c5fd;
-        }
+  #timeLabel {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: #f0c040;
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 6px 16px;
+    border-radius: 20px;
+    z-index: 50;
+    pointer-events: none;
+    text-shadow: 0 0 8px currentColor;
+    transition: color 0.3s;
+    white-space: nowrap;
+  }
+  #timeLabel.night {
+    color: #a080ff;
+    background: rgba(10, 0, 30, 0.85);
+  }
 
-        .prestige-btn {
-            background: linear-gradient(90deg, #dc2626, #ef4444);
-            margin-top: auto;
-            border: none;
-            color: white;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-        }
+  #nightOverlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: transparent;
+    transition: background 1.5s;
+    z-index: 1;
+  }
+  #nightOverlay.night {
+    background: rgba(0, 0, 30, 0.55);
+  }
 
-        .prestige-btn:disabled {
-            background: #334155;
-            color: #64748b;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
+  #dismissOverlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    border: 4px solid rgba(255, 60, 60, 0);
+    box-shadow: inset 0 0 80px rgba(255, 60, 60, 0);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    z-index: 5;
+  }
+  #dismissOverlay.active {
+    border-color: rgba(255, 60, 60, 0.7);
+    box-shadow: inset 0 0 80px rgba(255, 60, 60, 0.25);
+  }
 
-        /* Инструкция на экране */
-        .controls-hint {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            background: rgba(0,0,0,0.6);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #cbd5e1;
-            pointer-events: none;
-        }
-    </style>
+  #waveBanner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    font-size: 36px;
+    font-weight: bold;
+    color: #ff4060;
+    text-shadow: 0 0 30px #ff2040, 0 0 60px #ff2040;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 100;
+    font-family: Arial, sans-serif;
+    transition: opacity 0.3s, transform 0.3s;
+    white-space: nowrap;
+    text-align: center;
+  }
+  #waveBanner.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  #upgradeMenu {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 2, 20, 0.92);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    box-shadow: inset 0 0 200px rgba(120, 40, 200, 0.3);
+  }
+  #upgradeMenu.show { display: flex; }
+
+  #upgradeTitle {
+    color: #e0d0ff;
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    text-align: center;
+    text-shadow: 0 0 15px rgba(180, 100, 255, 0.8);
+  }
+  #upgradeSubtitle {
+    color: #a080cc;
+    font-size: 13px;
+    margin-bottom: 18px;
+    text-align: center;
+    font-family: monospace;
+  }
+
+  #upgradeCards {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 720px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    width: 180px;
+    background: linear-gradient(180deg, #2a1548, #140820);
+    border: 2px solid #6a3fb0;
+    border-radius: 14px;
+    padding: 14px 12px;
+    cursor: pointer;
+    transition: transform 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(80, 30, 140, 0.4);
+    touch-action: manipulation;
+    user-select: none;
+  }
+  .card:active { transform: scale(0.96); }
+  .card.locked { opacity: 0.45; filter: grayscale(0.6); }
+  .card.locked:active { transform: none; }
+  .card .icon {
+    font-size: 42px;
+    margin-bottom: 6px;
+    filter: drop-shadow(0 0 8px rgba(180, 100, 255, 0.6));
+  }
+  .card .name {
+    color: #f0e0ff;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .card .desc {
+    color: #b090d0;
+    font-size: 11px;
+    margin-bottom: 8px;
+    line-height: 1.3;
+    min-height: 28px;
+  }
+  .card .cost {
+    color: #b07aff;
+    font-size: 15px;
+    font-weight: bold;
+    font-family: monospace;
+  }
+  .card .stack {
+    color: #7a5fa0;
+    font-size: 10px;
+    margin-top: 4px;
+    font-family: monospace;
+  }
+
+  #skipBtn {
+    background: transparent;
+    border: 2px solid #5a3a8a;
+    color: #a080cc;
+    font-size: 14px;
+    padding: 10px 30px;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  #skipBtn:active {
+    background: rgba(90, 58, 138, 0.4);
+    color: #fff;
+  }
+
+  #gameOverMenu {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 0, 10, 0.95);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    padding: 20px;
+    box-shadow: inset 0 0 200px rgba(200, 20, 40, 0.4);
+  }
+  #gameOverMenu.show { display: flex; }
+  #gameOverTitle {
+    color: #ff4060;
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-shadow: 0 0 30px #ff2040;
+    text-align: center;
+  }
+  #gameOverStats {
+    color: #e0d0ff;
+    font-size: 16px;
+    font-family: monospace;
+    margin-bottom: 30px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  #gameOverStats b { color: #b07aff; }
+  #restartBtn {
+    background: radial-gradient(circle at 30% 30%, #7a3fb8, #2d0d4f);
+    border: 3px solid rgba(200, 130, 255, 0.6);
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 14px 40px;
+    border-radius: 28px;
+    cursor: pointer;
+    box-shadow: 0 0 30px rgba(160, 80, 220, 0.6);
+    transition: transform 0.1s;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  #restartBtn:active { transform: scale(0.95); }
+
+  #mainMenu {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 40%, rgba(60, 20, 100, 0.95), rgba(5, 2, 15, 0.98));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 400;
+    padding: 20px;
+    box-shadow: inset 0 0 300px rgba(120, 40, 200, 0.4);
+  }
+  #mainMenu.hidden { display: none; }
+
+  #menuTitle {
+    font-size: 42px;
+    font-weight: bold;
+    color: #e0c0ff;
+    text-shadow: 0 0 30px #a050ff, 0 0 60px #6020a0;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  #menuSubtitle {
+    font-size: 14px;
+    color: #a080cc;
+    font-family: monospace;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  #menuButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .menuBtn {
+    padding: 16px 24px;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    text-align: center;
+    border: none;
+    touch-action: manipulation;
+    user-select: none;
+    font-family: Arial, sans-serif;
+  }
+  .menuBtn:active { transform: scale(0.96); }
+
+  #playBtn {
+    background: radial-gradient(circle at 30% 30%, #8a4fd0, #3d1a6a);
+    border: 3px solid rgba(200, 130, 255, 0.7);
+    color: #fff;
+    box-shadow: 0 0 30px rgba(160, 80, 220, 0.6);
+  }
+
+  #continueBtn {
+    background: radial-gradient(circle at 30% 30%, #4a8a5a, #1a3a24);
+    border: 3px solid rgba(120, 255, 160, 0.6);
+    color: #e0ffe8;
+    box-shadow: 0 0 30px rgba(80, 220, 130, 0.5);
+  }
+
+  #recordBox {
+    margin-top: 30px;
+    padding: 14px 28px;
+    background: rgba(20, 10, 40, 0.7);
+    border: 2px solid rgba(255, 200, 80, 0.5);
+    border-radius: 20px;
+    color: #ffd060;
+    font-family: monospace;
+    font-size: 16px;
+    text-align: center;
+    box-shadow: 0 0 25px rgba(255, 200, 80, 0.3);
+  }
+  #recordBox b { font-size: 22px; }
+</style>
 </head>
 <body>
 
-    <!-- Игровой холст -->
-    <div class="game-wrapper">
-        <canvas id="game-canvas" width="540" height="500"></canvas>
-        <div class="controls-hint">Управление: Стрелочки на клавиатуре или зажмите мышь/тапните по экрану в нужную сторону движения.</div>
-    </div>
+<canvas id="game"></canvas>
+<div id="nightOverlay"></div>
+<div id="joystick"><div id="stick"></div></div>
 
-    <!-- Панель RPG Прокачки -->
-    <div class="ui-panel">
-        <div class="stat-box">
-            <div class="stat-value" id="gold-txt">0 💰</div>
-            <div class="stat-label">Баланс Золота</div>
-        </div>
+<div id="raiseBtn">💀<div class="badge" id="raiseBadge"></div></div>
+<div id="summonBtn">👻<div class="badge" id="summonBadge"></div></div>
+<div id="dismissBtn">🗑️</div>
 
-        <div class="stat-box">
-            <div class="stat-value" id="dist-txt">0 м</div>
-            <div class="stat-label">Дистанция от центра</div>
-        </div>
+<div id="dismissOverlay"></div>
 
-        <button class="upgrade-btn" id="up-damage">
-            Урон топора (+1)
-            <span id="dmg-cost">Цена: 10 💰</span>
-        </button>
+<div id="hud">
+  <div>💜 Души: <span class="souls" id="soulsCount">0</span></div>
+  <div>💀 Армия: <span class="army" id="armyCount">0/6</span></div>
+  <div>❤️ HP: <span id="hpCount">100</span></div>
+  <div>🌙 Ночь: <span id="nightCount">0</span></div>
+</div>
 
-        <button class="upgrade-btn" id="up-speed">
-            Скорость бега
-            <span id="speed-cost">Цена: 50 💰</span>
-        </button>
+<div id="timeBar"><div id="timeBarFill"></div></div>
+<div id="timeLabel">☀️ День 1</div>
 
-        <div class="stat-box" style="margin-top: 15px;">
-            <div class="stat-value" id="prestige-multiplier" style="color: #ffcc00;">x1.0</div>
-            <div class="stat-label">Множитель Престижа</div>
-        </div>
+<div id="waveBanner">🌙 НОЧЬ 1</div>
 
-        <!-- Кнопка сброса (Престиж) -->
-        <button class="prestige-btn" id="prestige-btn" disabled>
-            ПРЕСТИЖ
-            <div style="font-size: 10px; font-weight: normal; margin-top: 2px;" id="prestige-hint">Нужно отойти на 500м</div>
-        </button>
-    </div>
+<div id="upgradeMenu">
+  <div id="upgradeTitle">🌙 Ночь пережита!</div>
+  <div id="upgradeSubtitle">Выберите улучшение или пропустите</div>
+  <div id="upgradeCards"></div>
+  <button id="skipBtn">Пропустить</button>
+</div>
 
-    <script src="game.js"></script>
+<div id="gameOverMenu">
+  <div id="gameOverTitle">💀 Вы пали</div>
+  <div id="gameOverStats"></div>
+  <button id="restartBtn">В главное меню</button>
+</div>
+
+<div id="mainMenu">
+  <div id="menuTitle">НЕКРОМАНТ</div>
+  <div id="menuSubtitle">Волны · Выживание · Армия мёртвых</div>
+  <div id="menuButtons">
+    <button class="menuBtn" id="continueBtn" style="display:none;">▶ Продолжить</button>
+    <button class="menuBtn" id="playBtn">⚔ Новая игра</button>
+  </div>
+  <div id="recordBox">🏆 Рекорд: <b id="recordValue">0</b> ночей</div>
+</div>
+
+<script>
+// =====================
+// БАЗА
+// =====================
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  buildGrassPattern();
+}
+window.addEventListener('resize', resize);
+
+// =====================
+// АДАПТИВНЫЙ ЗУМ
+// =====================
+function getZoom() {
+  const minSide = Math.min(W, H);
+  if (minSide < 500) return 0.8;
+  if (minSide < 800) return 0.75;
+  return 0.7;
+}
+
+let time = 0;
+let lastFrameTime = performance.now();
+
+// =====================
+// СОХРАНЕНИЕ / РЕКОРД
+// =====================
+const SAVE_KEY = 'necromancer_save_v1';
+const RECORD_KEY = 'necromancer_record_v1';
+
+function getRecord() {
+  return parseInt(localStorage.getItem(RECORD_KEY) || '0', 10) || 0;
+}
+function setRecord(n) {
+  localStorage.setItem(RECORD_KEY, String(n));
+}
+function hasSave() {
+  return localStorage.getItem(SAVE_KEY) !== null;
+}
+function writeSave() {
+  try {
+    const save = {
+      day: gameState.day,
+      totalNightsSurvived: gameState.totalNightsSurvived,
+      player: {
+        hp: player.hp,
+        maxHp: player.maxHp,
+        souls: player.souls,
+        auraRadius: player.auraRadius,
+        auraDamage: player.auraDamage,
+        auraTickInterval: player.auraTickInterval,
+        maxArmy: player.maxArmy,
+        speed: player.speed,
+        undeadDamage: player.undeadDamage,
+        undeadBonusHP: player.undeadBonusHP,
+        undeadBonusSpeed: player.undeadBonusSpeed,
+        soulCollectRange: player.soulCollectRange,
+        lightRadius: player.lightRadius
+      },
+      upgradeStacks: { ...upgradeStacks }
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  } catch (e) { console.log('save error', e); }
+}
+function clearSave() {
+  localStorage.removeItem(SAVE_KEY);
+}
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const save = JSON.parse(raw);
+    if (!save || !save.player) return false;
+
+    gameState.day = save.day || 1;
+    gameState.totalNightsSurvived = save.totalNightsSurvived || 0;
+    gameState.isNight = false;
+    gameState.phaseTimer = DAY_DURATION;
+    gameState.transition = 0;
+    gameState.waveSpawnTimer = 0;
+    gameState.paused = false;
+    gameState.gameOver = false;
+
+    Object.assign(player, save.player);
+    player.x = 0; player.y = 0;
+    player.dirX = 1; player.dirY = 0;
+    player.armyVisible = [];
+    player.armyHidden = [];
+    player.dismissMode = false;
+
+    if (save.upgradeStacks) {
+      for (const id in upgradeStacks) {
+        upgradeStacks[id] = save.upgradeStacks[id] || 0;
+      }
+    }
+
+    mobs.length = 0;
+    souls.length = 0;
+    corpses.length = 0;
+    camera.x = 0; camera.y = 0;
+
+    updateTimeUI();
+    updateHUD();
+    updateRaiseBadge();
+    updateSummonBtn();
+    updateDismissBtn();
+    return true;
+  } catch (e) {
+    console.log('load error', e);
+    return false;
+  }
+}
+
+// =====================
+// ЦИКЛ ДНЯ И НОЧИ
+// =====================
+const DAY_DURATION = 45;
+const NIGHT_DURATION = 15;
+
+const gameState = {
+  day: 1,
+  isNight: false,
+  phaseTimer: DAY_DURATION,
+  transition: 0,
+  totalNightsSurvived: 0,
+  paused: true,
+  waveSpawned: false,
+  gameOver: false,
+  inMenu: true,
+  waveSpawnTimer: 0,
+  waveSpawnInterval: 4,
+  daySpawnInterval: 3.5
+};
+
+function updateDayNight(dt) {
+  if (gameState.paused) return;
+
+  gameState.phaseTimer -= dt;
+  if (gameState.phaseTimer <= 0) {
+    if (gameState.isNight) {
+      gameState.isNight = false;
+      gameState.day += 1;
+      gameState.totalNightsSurvived += 1;
+      gameState.phaseTimer = DAY_DURATION;
+      gameState.transition = 0;
+      onNightEnd();
+    } else {
+      gameState.isNight = true;
+      gameState.phaseTimer = NIGHT_DURATION;
+      gameState.transition = 1;
+      gameState.waveSpawned = false;
+      onNightStart();
+    }
+  }
+
+  const targetTransition = gameState.isNight ? 1 : 0;
+  gameState.transition += (targetTransition - gameState.transition) * Math.min(1, dt * 2);
+  if (Math.abs(gameState.transition - targetTransition) < 0.01) {
+    gameState.transition = targetTransition;
+  }
+
+  updateTimeUI();
+}
+
+function updateTimeUI() {
+  const fill = document.getElementById('timeBarFill');
+  const label = document.getElementById('timeLabel');
+  const overlay = document.getElementById('nightOverlay');
+
+  const totalDur = gameState.isNight ? NIGHT_DURATION : DAY_DURATION;
+  const progress = 1 - Math.max(0, gameState.phaseTimer) / totalDur;
+
+  fill.style.width = (progress * 100).toFixed(1) + '%';
+
+  if (gameState.isNight) {
+    fill.style.background = 'linear-gradient(90deg, #5030a0, #a080ff)';
+    label.textContent = `🌙 Ночь ${gameState.day} · ${Math.ceil(Math.max(0, gameState.phaseTimer))}с`;
+    label.classList.add('night');
+    overlay.classList.add('night');
+  } else {
+    fill.style.background = 'linear-gradient(90deg, #f0c040, #f0a030)';
+    label.textContent = `☀️ День ${gameState.day} · ${Math.ceil(Math.max(0, gameState.phaseTimer))}с`;
+    label.classList.remove('night');
+    overlay.classList.remove('night');
+  }
+}
+
+// =====================
+// ВОЛНЫ И СПАВН
+// =====================
+const waveBanner = document.getElementById('waveBanner');
+let bannerTimer = 0;
+
+function onNightStart() {
+  gameState.waveSpawnTimer = 0;
+  showWaveBanner(`🌙 НОЧЬ ${gameState.day}`);
+  spawnMiniWave(gameState.day);
+}
+
+function onNightEnd() {
+  gameState.paused = true;
+  if (gameState.totalNightsSurvived > getRecord()) {
+    setRecord(gameState.totalNightsSurvived);
+  }
+  openUpgradeMenu();
+}
+
+function spawnMiniWave(nightNumber) {
+  const satyrsCount = 1 + Math.floor(nightNumber * 0.5);
+  const ogresCount = Math.max(0, Math.floor((nightNumber - 1) * 0.3));
+
+  const hpMultiplier = 1 + (nightNumber - 1) * 0.1;
+  const dmgMultiplier = 1 + (nightNumber - 1) * 0.15;
+
+  for (let i = 0; i < satyrsCount; i++) {
+    spawnMobAtEdge('satyr', hpMultiplier, dmgMultiplier);
+  }
+  for (let i = 0; i < ogresCount; i++) {
+    spawnMobAtEdge('ogre', hpMultiplier, dmgMultiplier);
+  }
+}
+
+function spawnRandomMob(dayNumber) {
+  const hpMultiplier = 1 + (dayNumber - 1) * 0.1;
+  const dmgMultiplier = 1 + (dayNumber - 1) * 0.15;
+
+  let type = 'satyr';
+  if (dayNumber >= 3 && Math.random() < 0.25) {
+    type = 'ogre';
+  }
+
+  spawnMobVisible(type, hpMultiplier, dmgMultiplier);
+}
+
+function spawnMobVisible(type, hpMult, dmgMult) {
+  const cfg = MOB_TYPES[type];
+
+  const zoom = getZoom();
+  const halfDiag = Math.hypot(W, H) / (2 * zoom);
+  const minR = halfDiag + 80;
+  const maxR = halfDiag + 220;
+
+  const ang = Math.random() * Math.PI * 2;
+  const dist = minR + Math.random() * (maxR - minR);
+  const x = camera.x + Math.cos(ang) * dist;
+  const y = camera.y + Math.sin(ang) * dist;
+
+  mobs.push({
+    type, x, y,
+    radius: cfg.radius, collR: cfg.collR,
+    baseSpeed: cfg.speed,
+    speed: cfg.speed,
+    dirX: 1, dirY: 0,
+    targetDirX: 0, targetDirY: 0,
+    wanderAngle: Math.random() * Math.PI * 2,
+    wanderTimer: 0,
+    bobPhase: Math.random() * Math.PI * 2,
+    hp: Math.round(cfg.hp * hpMult),
+    maxHp: Math.round(cfg.hp * hpMult),
+    damageMult: dmgMult,
+    state: 'idle',
+    hurtTimer: 0,
+    legPhase: 0,
+    aggroUndead: null,
+    aggroTimer: 0
+  });
+}
+
+function spawnMobAtEdge(type, hpMult, dmgMult) {
+  const cfg = MOB_TYPES[type];
+  const zoom = getZoom();
+  const edgePadding = 80;
+  const halfW = W / (2 * zoom) + edgePadding;
+  const halfH = H / (2 * zoom) + edgePadding;
+
+  let x, y;
+  const side = Math.floor(Math.random() * 4);
+  if (side === 0) {
+    x = camera.x + (Math.random() * 2 - 1) * halfW;
+    y = camera.y - halfH;
+  } else if (side === 1) {
+    x = camera.x + (Math.random() * 2 - 1) * halfW;
+    y = camera.y + halfH;
+  } else if (side === 2) {
+    x = camera.x - halfW;
+    y = camera.y + (Math.random() * 2 - 1) * halfH;
+  } else {
+    x = camera.x + halfW;
+    y = camera.y + (Math.random() * 2 - 1) * halfH;
+  }
+
+  mobs.push({
+    type, x, y,
+    radius: cfg.radius, collR: cfg.collR,
+    baseSpeed: cfg.speed,
+    speed: cfg.speed,
+    dirX: 1, dirY: 0,
+    targetDirX: 0, targetDirY: 0,
+    wanderAngle: Math.random() * Math.PI * 2,
+    wanderTimer: 0,
+    bobPhase: Math.random() * Math.PI * 2,
+    hp: Math.round(cfg.hp * hpMult),
+    maxHp: Math.round(cfg.hp * hpMult),
+    damageMult: dmgMult,
+    state: 'idle',
+    hurtTimer: 0,
+    legPhase: 0,
+    aggroUndead: null,
+    aggroTimer: 0
+  });
+}
+
+function showWaveBanner(text) {
+  waveBanner.textContent = text;
+  waveBanner.classList.add('show');
+  bannerTimer = 2;
+}
+
+function updateBanner(dt) {
+  if (bannerTimer > 0) {
+    bannerTimer -= dt;
+    if (bannerTimer <= 0) {
+      waveBanner.classList.remove('show');
+    }
+  }
+}
+
+// =====================
+// УЛУЧШЕНИЯ
+// =====================
+const UPGRADES = [
+  {
+    id: 'auraRadius', icon: '🌀', name: 'Радиус ауры',
+    desc: '+25 px к радиусу ауры', cost: 10, maxStacks: 5,
+    apply: () => { player.auraRadius += 25; }
+  },
+  {
+    id: 'auraDamage', icon: '⚡', name: 'Урон ауры',
+    desc: '+6 к урону ауры', cost: 15, maxStacks: 5,
+    apply: () => { player.auraDamage += 6; }
+  },
+  {
+    id: 'auraSpeed', icon: '💨', name: 'Скорость ауры',
+    desc: '−0.05 сек между тиками', cost: 20, maxStacks: 4,
+    apply: () => { player.auraTickInterval = Math.max(0.1, player.auraTickInterval - 0.05); }
+  },
+  {
+    id: 'armyLimit', icon: '💀', name: 'Лимит армии',
+    desc: '+1 к лимиту нежити', cost: 25, maxStacks: 4,
+    apply: () => { player.maxArmy += 1; }
+  },
+  {
+    id: 'maxHP', icon: '❤️', name: 'Здоровье',
+    desc: '+20 к макс. HP', cost: 12, maxStacks: 5,
+    apply: () => { player.maxHp += 20; player.hp += 20; }
+  },
+  {
+    id: 'moveSpeed', icon: '🏃', name: 'Скорость',
+    desc: '+0.4 к скорости движения', cost: 12, maxStacks: 4,
+    apply: () => { player.speed += 0.4; }
+  },
+  {
+    id: 'undeadDamage', icon: '🎯', name: 'Урон нежити',
+    desc: '+10 к урону скелетов', cost: 18, maxStacks: 4,
+    apply: () => { player.undeadDamage += 10; }
+  },
+  {
+    id: 'undeadHP', icon: '🌫️', name: 'HP нежити',
+    desc: '+20 к HP скелетов', cost: 18, maxStacks: 4,
+    apply: () => { player.undeadBonusHP += 20; }
+  },
+  {
+    id: 'undeadSpeed', icon: '👻', name: 'Скорость нежити',
+    desc: '+0.4 к скорости скелетов', cost: 15, maxStacks: 4,
+    apply: () => { player.undeadBonusSpeed += 0.4; }
+  },
+  {
+    id: 'soulRange', icon: '🧲', name: 'Сбор душ',
+    desc: '+40 px к радиусу сбора', cost: 15, maxStacks: 3,
+    apply: () => { player.soulCollectRange += 40; }
+  }
+];
+
+const upgradeStacks = {};
+UPGRADES.forEach(u => upgradeStacks[u.id] = 0);
+let currentCards = [];
+
+// =====================
+// ИГРОК
+// =====================
+const player = {
+  x: 0, y: 0,
+  radius: 22,
+  speed: 4.5,
+  dirX: 1, dirY: 0,
+  hp: 100,
+  maxHp: 100,
+  auraRadius: 130,
+  auraTickInterval: 0.4,
+  auraTickTimer: 0,
+  auraDamage: 12,
+  souls: 0,
+  armyVisible: [],
+  armyHidden: [],
+  maxArmy: 6,
+  raiseRadius: 260,
+  raiseCost: { satyr: 1, ogre: 3 },
+  dismissMode: false,
+  lightRadius: 220,
+  undeadDamage: 20,
+  undeadBonusHP: 0,
+  undeadBonusSpeed: 0,
+  soulCollectRange: 110
+};
+
+const camera = { x: 0, y: 0 };
+
+// =====================
+// МОБЫ
+// =====================
+const mobs = [];
+
+const MOB_TYPES = {
+  satyr: {
+    radius: 18, collR: 18, speed: 3.2,
+    detectRange: 1000,
+    fleeWhenDay: true,
+    hp: 40, maxHp: 40,
+    soulsOnDeath: 1,
+    baseDamage: 8
+  },
+  ogre: {
+    radius: 32, collR: 32, speed: 1.5,
+    detectRange: 1000,
+    fleeWhenDay: false,
+    hp: 150, maxHp: 150,
+    soulsOnDeath: 3,
+    baseDamage: 12
+  }
+};
+
+function cullMobs() {
+  const zoom = getZoom();
+  const CULL_DIST = Math.max(W, H) / zoom * 1.6;
+  for (let i = mobs.length - 1; i >= 0; i--) {
+    const m = mobs[i];
+    if (Math.hypot(m.x - player.x, m.y - player.y) > CULL_DIST) {
+      mobs.splice(i, 1);
+    }
+  }
+}
+
+// =====================
+// ТРУПЫ
+// =====================
+const corpses = [];
+
+function dropCorpse(mob) {
+  corpses.push({
+    x: mob.x, y: mob.y,
+    type: mob.type,
+    radius: mob.radius,
+    seed: Math.random() * 1000,
+    deadTime: time,
+    rot: Math.random() < 0.5 ? -1 : 1
+  });
+  if (corpses.length > 80) corpses.shift();
+}
+
+// =====================
+// ДУШИ
+// =====================
+const souls = [];
+
+function spawnSouls(x, y, count, mobType) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = 5 + Math.random() * 25;
+    souls.push({
+      x: x + Math.cos(angle) * r,
+      y: y + Math.sin(angle) * r,
+      phase: Math.random() * Math.PI * 2,
+      bob: 0,
+      attract: 0,
+      life: 30,
+      fromType: mobType
+    });
+  }
+}
+
+function spawnSingleSoul(x, y) {
+  souls.push({
+    x, y,
+    phase: Math.random() * Math.PI * 2,
+    bob: 0,
+    attract: 0,
+    life: 30,
+    fromType: 'release'
+  });
+}
+
+// =====================
+// ЧАНКИ
+// =====================
+const CHUNK_SIZE = 500;
+const chunks = new Map();
+
+function seededRandom(seed) {
+  let s = Math.sin(seed) * 10000;
+  return s - Math.floor(s);
+}
+function getChunkKey(cx, cy) { return cx + ',' + cy; }
+
+const COLLISION_RADIUS = { tree: 14, bush: 14, rock: 14 };
+
+function generateChunk(cx, cy) {
+  const key = getChunkKey(cx, cy);
+  if (chunks.has(key)) return;
+
+  const objects = [];
+  const blades = [];
+  const baseX = cx * CHUNK_SIZE;
+  const baseY = cy * CHUNK_SIZE;
+  const seed = cx * 374761393 + cy * 668265263;
+  const count = 6 + Math.floor(seededRandom(seed) * 5);
+
+  for (let i = 0; i < count; i++) {
+    const r1 = seededRandom(seed + i * 3 + 1);
+    const r2 = seededRandom(seed + i * 7 + 2);
+    const r3 = seededRandom(seed + i * 11 + 3);
+    const x = baseX + r1 * CHUNK_SIZE;
+    const y = baseY + r2 * CHUNK_SIZE;
+    let type, radius;
+    if (r3 < 0.4) { type = 'tree'; radius = 30; }
+    else if (r3 < 0.75) { type = 'bush'; radius = 20; }
+    else { type = 'rock'; radius = 16; }
+    objects.push({
+      x, y, type, radius,
+      collR: COLLISION_RADIUS[type],
+      seed: seed + i * 13,
+      size: 0.85 + r2 * 0.4,
+      rotation: r1 * Math.PI * 2
+    });
+  }
+
+  for (let i = 0; i < 80; i++) {
+    const r1 = seededRandom(seed + i * 17 + 101);
+    const r2 = seededRandom(seed + i * 23 + 102);
+    const r3 = seededRandom(seed + i * 31 + 103);
+    const r4 = seededRandom(seed + i * 41 + 104);
+    blades.push({
+      x: baseX + r1 * CHUNK_SIZE,
+      y: baseY + r2 * CHUNK_SIZE,
+      height: 10 + r3 * 14,
+      width: 2 + r4 * 1.5,
+      phase: r1 * Math.PI * 2,
+      speed: 0.8 + r3 * 0.6,
+      hue: 90 + r4 * 40
+    });
+  }
+
+  chunks.set(key, { objects, blades });
+}
+
+function updateChunks() {
+  const zoom = getZoom();
+  const rangeX = (W / zoom) / 2 / CHUNK_SIZE + 2;
+  const rangeY = (H / zoom) / 2 / CHUNK_SIZE + 2;
+  const cx = Math.floor(player.x / CHUNK_SIZE);
+  const cy = Math.floor(player.y / CHUNK_SIZE);
+  const rx = Math.ceil(rangeX);
+  const ry = Math.ceil(rangeY);
+  for (let dx = -rx; dx <= rx; dx++)
+    for (let dy = -ry; dy <= ry; dy++)
+      generateChunk(cx + dx, cy + dy);
+}
+
+function getVisibleChunks(l, r, t, b) {
+  const list = [];
+  const cxMin = Math.floor(l / CHUNK_SIZE);
+  const cxMax = Math.floor(r / CHUNK_SIZE);
+  const cyMin = Math.floor(t / CHUNK_SIZE);
+  const cyMax = Math.floor(b / CHUNK_SIZE);
+  for (let cx = cxMin; cx <= cxMax; cx++)
+    for (let cy = cyMin; cy <= cyMax; cy++) {
+      const c = chunks.get(getChunkKey(cx, cy));
+      if (c) list.push(c);
+    }
+  return list;
+}
+
+// =====================
+// ФОН
+// =====================
+let grassPattern = null;
+function buildGrassPattern() {
+  const S = 256;
+  const gCanvas = document.createElement('canvas');
+  gCanvas.width = S; gCanvas.height = S;
+  const g = gCanvas.getContext('2d');
+
+  const grd = g.createLinearGradient(0, 0, S, S);
+  grd.addColorStop(0, '#1e3312');
+  grd.addColorStop(0.5, '#2a4a1a');
+  grd.addColorStop(1, '#1e3312');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, S, S);
+
+  for (let i = 0; i < 40; i++) {
+    const tones = ['#24421a', '#2d5a1c', '#1a300e', '#335e22', '#284417'];
+    g.fillStyle = tones[Math.floor(Math.random() * tones.length)];
+    g.globalAlpha = 0.4;
+    g.beginPath();
+    g.arc(Math.random() * S, Math.random() * S, 15 + Math.random() * 40, 0, Math.PI * 2);
+    g.fill();
+  }
+  g.globalAlpha = 1;
+
+  for (let i = 0; i < 800; i++) {
+    const x = Math.random() * S, y = Math.random() * S;
+    const len = 2 + Math.random() * 4;
+    const lean = (Math.random() - 0.5) * 3;
+    const b = Math.random();
+    if (b > 0.7) g.strokeStyle = '#4a7a2c';
+    else if (b > 0.3) g.strokeStyle = '#3a6020';
+    else g.strokeStyle = '#162a08';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + lean, y - len);
+    g.stroke();
+  }
+
+  grassPattern = ctx.createPattern(gCanvas, 'repeat');
+}
+
+// =====================
+// ДЖОЙСТИК
+// =====================
+const joystick = document.getElementById('joystick');
+const stick = document.getElementById('stick');
+const maxDist = 45;
+const deadZone = 0.15;
+
+let touchId = null;
+let origin = { x: 0, y: 0 };
+let vector = { x: 0, y: 0 };
+
+function showJoystick(x, y) {
+  joystick.style.left = x + 'px';
+  joystick.style.top = y + 'px';
+  joystick.classList.add('visible');
+  stick.style.transform = 'translate(0, 0)';
+}
+function hideJoystick() {
+  joystick.classList.remove('visible');
+  vector.x = 0; vector.y = 0;
+}
+
+canvas.addEventListener('touchstart', e => {
+  if (gameState.paused || gameState.gameOver || gameState.inMenu) return;
+  for (const t of e.changedTouches) {
+    if (player.dismissMode) {
+      const tx = t.clientX, ty = t.clientY;
+      if (tryDismissAt(tx, ty)) {
+        e.preventDefault();
+        return;
+      }
+    }
+    if (touchId === null) {
+      touchId = t.identifier;
+      origin.x = t.clientX; origin.y = t.clientY;
+      showJoystick(origin.x, origin.y);
+      break;
+    }
+  }
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  if (gameState.paused || gameState.gameOver || gameState.inMenu) return;
+  for (const t of e.changedTouches) {
+    if (t.identifier === touchId) updateVector(t.clientX, t.clientY);
+  }
+  e.preventDefault();
+}, { passive: false });
+
+function onTouchEnd(e) {
+  for (const t of e.changedTouches) {
+    if (t.identifier === touchId) {
+      touchId = null;
+      hideJoystick();
+    }
+  }
+  e.preventDefault();
+}
+canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+let mouseDown = false;
+canvas.addEventListener('mousedown', e => {
+  if (gameState.paused || gameState.gameOver || gameState.inMenu) return;
+  if (player.dismissMode) {
+    if (tryDismissAt(e.clientX, e.clientY)) {
+      e.preventDefault();
+      return;
+    }
+  }
+  mouseDown = true;
+  origin.x = e.clientX; origin.y = e.clientY;
+  showJoystick(origin.x, origin.y);
+  e.preventDefault();
+});
+window.addEventListener('mousemove', e => {
+  if (mouseDown) updateVector(e.clientX, e.clientY);
+});
+window.addEventListener('mouseup', () => {
+  mouseDown = false;
+  hideJoystick();
+});
+
+function updateVector(x, y) {
+  let dx = x - origin.x;
+  let dy = y - origin.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist > maxDist) {
+    dx = (dx / dist) * maxDist;
+    dy = (dy / dist) * maxDist;
+  }
+  stick.style.transform = `translate(${dx}px, ${dy}px)`;
+  const nx = dx / maxDist;
+  const ny = dy / maxDist;
+  const mag = Math.hypot(nx, ny);
+  if (mag < deadZone) {
+    vector.x = 0; vector.y = 0;
+  } else {
+    const scaled = (mag - deadZone) / (1 - deadZone);
+    vector.x = (nx / mag) * scaled;
+    vector.y = (ny / mag) * scaled;
+  }
+}
+
+// =====================
+// КОЛЛИЗИИ
+// =====================
+function pushOutOfObjects(x, y, radius, range = 300) {
+  const nearby = getVisibleChunks(x - range, x + range, y - range, y + range);
+  for (const chunk of nearby) {
+    for (const obj of chunk.objects) {
+      const dx = x - obj.x;
+      const dy = y - obj.y;
+      const dist = Math.hypot(dx, dy);
+      const minDist = radius + obj.collR;
+      if (dist < minDist && dist > 0.0001) {
+        const overlap = minDist - dist;
+        x += (dx / dist) * overlap;
+        y += (dy / dist) * overlap;
+      } else if (dist <= 0.0001) {
+        y -= minDist;
+      }
+    }
+  }
+  return { x, y };
+}
+
+// =====================
+// АУРА
+// =====================
+function updateAura(dt) {
+  player.auraTickTimer -= dt;
+  if (player.auraTickTimer > 0) return;
+  player.auraTickTimer = player.auraTickInterval;
+
+  for (let i = mobs.length - 1; i >= 0; i--) {
+    const m = mobs[i];
+    const dist = Math.hypot(m.x - player.x, m.y - player.y);
+    if (dist < player.auraRadius + m.radius) {
+      m.hp -= player.auraDamage;
+      m.hurtTimer = 0.15;
+      if (m.hp <= 0) killMob(i);
+    }
+  }
+}
+
+function killMob(index) {
+  const m = mobs[index];
+  mobs.splice(index, 1);
+  dropCorpse(m);
+  spawnSouls(m.x, m.y, MOB_TYPES[m.type].soulsOnDeath, m.type);
+}
+
+// =====================
+// МОБЫ (ИИ) — с атакой нежити и ответной агрессией
+// =====================
+function updateMobs(dt) {
+  const UNDEAD_DETECT_MULT = 0.5;
+
+  for (const m of mobs) {
+    const cfg = MOB_TYPES[m.type];
+    const dxP = player.x - m.x;
+    const dyP = player.y - m.y;
+    const distToPlayer = Math.hypot(dxP, dyP);
+
+    const fleeThreshold = m.state === 'flee' ? 300 : 200;
+    const isFleeing = !gameState.isNight && cfg.fleeWhenDay && distToPlayer < fleeThreshold;
+    const isDaySatyrIdle = !gameState.isNight && cfg.fleeWhenDay && !isFleeing;
+
+    // ---- Выбор цели ----
+    let target = null;
+    let bestDist = Infinity;
+
+    // 1. Ответная агрессия (приоритет)
+    if (m.aggroTimer > 0) {
+      m.aggroTimer -= dt;
+      const au = m.aggroUndead;
+      if (au && player.armyVisible.includes(au)) {
+        const dx = au.x - m.x;
+        const dy = au.y - m.y;
+        const d = Math.hypot(dx, dy);
+        target = { kind: 'undead', obj: au, dist: d, dx, dy };
+        bestDist = d;
+      } else {
+        m.aggroTimer = 0;
+        m.aggroUndead = null;
+      }
+    }
+
+    // 2. Обычный выбор ближайшего
+    if (!target && !isFleeing && !isDaySatyrIdle) {
+      if (distToPlayer < cfg.detectRange) {
+        target = { kind: 'player', obj: player, dist: distToPlayer, dx: dxP, dy: dyP };
+        bestDist = distToPlayer;
+      }
+      const undeadDetect = cfg.detectRange * UNDEAD_DETECT_MULT;
+      for (const u of player.armyVisible) {
+        const dx = u.x - m.x;
+        const dy = u.y - m.y;
+        const d = Math.hypot(dx, dy);
+        if (d < undeadDetect && d < bestDist) {
+          bestDist = d;
+          target = { kind: 'undead', obj: u, dist: d, dx, dy };
+        }
+      }
+    }
+
+    let wantX = 0, wantY = 0;
+
+    if (isFleeing) {
+      const d = distToPlayer || 1;
+      wantX = -dxP / d;
+      wantY = -dyP / d;
+      m.state = 'flee';
+      m.speed = m.baseSpeed * 1.1;
+    } else if (isDaySatyrIdle) {
+      m.state = 'idle';
+      m.speed = m.baseSpeed;
+      m.wanderTimer -= dt;
+      if (m.wanderTimer <= 0) {
+        m.wanderTimer = 1 + Math.random() * 2;
+        m.wanderAngle += (Math.random() - 0.5) * Math.PI * 1.5;
+      }
+      wantX = Math.cos(m.wanderAngle);
+      wantY = Math.sin(m.wanderAngle);
+    } else if (target) {
+      const d = target.dist || 1;
+      wantX = target.dx / d;
+      wantY = target.dy / d;
+      m.state = 'chase';
+      m.speed = (!gameState.isNight && m.type === 'ogre') ? m.baseSpeed * 1.4 : m.baseSpeed;
+
+      const targetRadius = target.kind === 'player' ? player.radius : target.obj.radius;
+      if (d < m.radius + targetRadius + 4) {
+        const dmg = (m.damageMult || 1) * cfg.baseDamage;
+
+        if (target.kind === 'player') {
+          player.hp -= dmg * dt;
+          if (player.hp <= 0) {
+            player.hp = 0;
+            if (!gameState.gameOver) triggerGameOver();
+          }
+        } else {
+          const u = target.obj;
+          u.hp -= dmg * dt;
+          u.hurtTimer = 0.15;
+          if (u.hp <= 0) {
+            // Нежить просто исчезает (без трупа)
+            const idx = player.armyVisible.indexOf(u);
+            if (idx >= 0) player.armyVisible.splice(idx, 1);
+            if (m.aggroUndead === u) {
+              m.aggroUndead = null;
+              m.aggroTimer = 0;
+            }
+          }
+        }
+      }
+    } else {
+      m.speed = m.baseSpeed;
+      m.wanderTimer -= dt;
+      if (m.wanderTimer <= 0) {
+        m.wanderTimer = 1 + Math.random() * 2;
+        m.wanderAngle += (Math.random() - 0.5) * Math.PI * 1.5;
+      }
+      wantX = Math.cos(m.wanderAngle);
+      wantY = Math.sin(m.wanderAngle);
+      m.state = 'idle';
+    }
+
+    const turnSpeed = 4 * dt;
+    m.targetDirX += (wantX - m.targetDirX) * turnSpeed;
+    m.targetDirY += (wantY - m.targetDirY) * turnSpeed;
+    const mag = Math.hypot(m.targetDirX, m.targetDirY);
+    if (mag > 0.001) {
+      m.dirX = m.targetDirX / mag;
+      m.dirY = m.targetDirY / mag;
+    }
+
+    const oldX = m.x, oldY = m.y;
+    m.x += m.dirX * m.speed;
+    m.y += m.dirY * m.speed;
+    m.legPhase += dt * m.speed * 3;
+
+    const fixed = pushOutOfObjects(m.x, m.y, m.radius);
+    m.x = fixed.x;
+    m.y = fixed.y;
+
+    const moved = Math.hypot(m.x - oldX, m.y - oldY);
+    if (moved < m.speed * 0.3) {
+      m.wanderAngle += (Math.random() - 0.5) * Math.PI;
+      m.dirX += Math.cos(m.wanderAngle) * 0.3;
+      m.dirY += Math.sin(m.wanderAngle) * 0.3;
+    }
+
+    if (m.hurtTimer > 0) m.hurtTimer -= dt;
+  }
+
+  // Отталкивание моб ↔ моб
+  for (let i = 0; i < mobs.length; i++) {
+    for (let j = i + 1; j < mobs.length; j++) {
+      const a = mobs[i], b = mobs[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.hypot(dx, dy);
+      const minDist = a.radius + b.radius;
+      if (dist < minDist && dist > 0.001) {
+        const push = (minDist - dist) / 2;
+        const nx = dx / dist, ny = dy / dist;
+        a.x -= nx * push; a.y -= ny * push;
+        b.x += nx * push; b.y += ny * push;
+      }
+    }
+  }
+}
+
+// =====================
+// ДУШИ
+// =====================
+function updateSouls(dt) {
+  const ATTRACT_RADIUS = player.soulCollectRange;
+  const COLLECT_RADIUS = 26;
+
+  for (let i = souls.length - 1; i >= 0; i--) {
+    const s = souls[i];
+    s.life -= dt;
+    if (s.life <= 0) { souls.splice(i, 1); continue; }
+
+    const dx = player.x - s.x;
+    const dy = player.y - s.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < ATTRACT_RADIUS) s.attract = Math.min(1, s.attract + dt * 2.5);
+    else s.attract = Math.max(0, s.attract - dt * 1.5);
+
+    if (s.attract > 0) {
+      const speed = 80 + 400 * s.attract;
+      s.x += (dx / dist) * speed * dt;
+      s.y += (dy / dist) * speed * dt;
+    }
+
+    s.bob = Math.sin(time * 3 + s.phase) * 3;
+
+    if (dist < COLLECT_RADIUS) {
+      player.souls++;
+      souls.splice(i, 1);
+    }
+  }
+}
+
+// =====================
+// ОБРАБОТЧИК КНОПОК
+// =====================
+function bindButton(el, handler) {
+  let lastPress = 0;
+  const COOLDOWN = 150;
+
+  function doPress() {
+    if (gameState.paused || gameState.gameOver || gameState.inMenu) return;
+    const now = performance.now();
+    if (now - lastPress < COOLDOWN) return;
+    lastPress = now;
+    try { handler(); } catch (err) { console.log(err); }
+  }
+
+  el.addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation(); doPress();
+  }, { passive: false });
+  el.addEventListener('touchend', e => {
+    e.preventDefault(); e.stopPropagation();
+  }, { passive: false });
+  el.addEventListener('mousedown', e => {
+    e.preventDefault(); e.stopPropagation(); doPress();
+  });
+  el.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+  });
+}
+
+function bindMenuButton(el, handler) {
+  let lastPress = 0;
+  const COOLDOWN = 350;
+  function doPress(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    const now = performance.now();
+    if (now - lastPress < COOLDOWN) return;
+    lastPress = now;
+    try { handler(); } catch (err) { console.log(err); }
+  }
+  el.addEventListener('touchstart', doPress, { passive: false });
+  el.addEventListener('mousedown', doPress);
+  el.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
+}
+
+// =====================
+// КНОПКА 💀
+// =====================
+const raiseBtn = document.getElementById('raiseBtn');
+const raiseBadge = document.getElementById('raiseBadge');
+bindButton(raiseBtn, tryRaise);
+
+function tryRaise() {
+  const total = player.armyVisible.length + player.armyHidden.length;
+  if (total >= player.maxArmy) return;
+
+  let best = null;
+  let bestDist = player.raiseRadius;
+  for (const c of corpses) {
+    const d = Math.hypot(c.x - player.x, c.y - player.y);
+    if (d < bestDist) { bestDist = d; best = c; }
+  }
+  if (!best) return;
+
+  const cost = player.raiseCost[best.type] || 1;
+  if (player.souls < cost) return;
+
+  player.souls -= cost;
+
+  const ang = Math.random() * Math.PI * 2;
+  const dist = 40 + Math.random() * 30;
+  const sx = player.x + Math.cos(ang) * dist;
+  const sy = player.y + Math.sin(ang) * dist;
+  const fixed = pushOutOfObjects(sx, sy, best.type === 'ogre' ? 28 : 14);
+  spawnUndead(best.type, fixed.x, fixed.y);
+
+  const idx = corpses.indexOf(best);
+  if (idx >= 0) corpses.splice(idx, 1);
+}
+
+function spawnUndead(type, x, y) {
+  const isOgre = type === 'ogre';
+  player.armyVisible.push({
+    x, y,
+    radius: isOgre ? 28 : 14,
+    collR: isOgre ? 28 : 14,
+    speed: (isOgre ? 2.4 : 3.6) + player.undeadBonusSpeed,
+    type,
+    dirX: 1, dirY: 0,
+    targetDirX: 0, targetDirY: 0,
+    wanderTimer: 0,
+    wanderAngle: Math.random() * Math.PI * 2,
+    bobPhase: Math.random() * Math.PI * 2,
+    hp: (isOgre ? 100 : 35) + player.undeadBonusHP,
+    maxHp: (isOgre ? 100 : 35) + player.undeadBonusHP,
+    attackCooldown: 0,
+    hurtTimer: 0,
+    spawnAnim: 0.4,
+    legPhase: 0,
+    lightRadius: isOgre ? 90 : 70
+  });
+}
+
+function updateRaiseBadge() {
+  const total = player.armyVisible.length + player.armyHidden.length;
+  if (total >= player.maxArmy) {
+    raiseBadge.classList.remove('show');
+    raiseBtn.classList.add('disabled');
+    return;
+  }
+
+  let best = null;
+  let bestDist = player.raiseRadius;
+  for (const c of corpses) {
+    const d = Math.hypot(c.x - player.x, c.y - player.y);
+    if (d < bestDist) { bestDist = d; best = c; }
+  }
+
+  const canRaise = best && player.souls >= (player.raiseCost[best.type] || 1);
+  raiseBtn.classList.toggle('disabled', !canRaise);
+
+  if (canRaise) {
+    raiseBadge.textContent = player.raiseCost[best.type] || 1;
+    raiseBadge.classList.add('show');
+  } else {
+    raiseBadge.classList.remove('show');
+  }
+}
+
+// =====================
+// КНОПКА 👻
+// =====================
+const summonBtn = document.getElementById('summonBtn');
+const summonBadge = document.getElementById('summonBadge');
+bindButton(summonBtn, toggleSummon);
+
+function toggleSummon() {
+  const vis = player.armyVisible.length;
+  const hid = player.armyHidden.length;
+  if (vis === 0 && hid === 0) return;
+
+  if (player.dismissMode) {
+    player.dismissMode = false;
+    dismissBtn.classList.remove('active');
+    dismissOverlay.classList.remove('active');
+  }
+
+  if (hid > 0) {
+    const count = hid;
+    for (let i = 0; i < count; i++) {
+      const u = player.armyHidden.shift();
+      if (!u) break;
+      const ang = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+      const dist = 60 + Math.random() * 30;
+      const sx = player.x + Math.cos(ang) * dist;
+      const sy = player.y + Math.sin(ang) * dist;
+      const fixed = pushOutOfObjects(sx, sy, u.radius);
+      u.x = fixed.x; u.y = fixed.y;
+      u.dirX = 1; u.dirY = 0;
+      u.targetDirX = 0; u.targetDirY = 0;
+      u.wanderTimer = 0;
+      u.spawnAnim = 0;
+      player.armyVisible.push(u);
+    }
+  } else if (vis > 0) {
+    const toHide = player.armyVisible.slice();
+    player.armyVisible = [];
+    for (const u of toHide) player.armyHidden.push(u);
+  }
+}
+
+function updateSummonBtn() {
+  const vis = player.armyVisible.length;
+  const hid = player.armyHidden.length;
+  const total = vis + hid;
+  if (total === 0) {
+    summonBtn.classList.add('disabled');
+    summonBtn.textContent = '👻';
+    summonBadge.classList.remove('show');
+    return;
+  }
+  summonBtn.classList.remove('disabled');
+  if (hid > 0) {
+    summonBtn.textContent = '👻';
+    summonBadge.textContent = hid;
+    summonBadge.classList.add('show');
+  } else {
+    summonBtn.textContent = '💤';
+    summonBadge.classList.remove('show');
+  }
+}
+
+// =====================
+// КНОПКА 🗑️
+// =====================
+const dismissBtn = document.getElementById('dismissBtn');
+const dismissOverlay = document.getElementById('dismissOverlay');
+bindButton(dismissBtn, toggleDismissMode);
+
+function toggleDismissMode() {
+  if (player.armyVisible.length === 0) return;
+  player.dismissMode = !player.dismissMode;
+  dismissBtn.classList.toggle('active', player.dismissMode);
+  dismissOverlay.classList.toggle('active', player.dismissMode);
+}
+
+function tryDismissAt(screenX, screenY) {
+  const zoom = getZoom();
+  const cx = W / 2, cy = H / 2;
+  const wx = (screenX - cx) / zoom + cx - (W / 2 - camera.x);
+  const wy = (screenY - cy) / zoom + cy - (H / 2 - camera.y);
+
+  const TAP_EXTRA = 30 / zoom;
+  let best = null, bestDist = Infinity;
+
+  for (const u of player.armyVisible) {
+    const d = Math.hypot(u.x - wx, u.y - wy);
+    if (d < u.radius + TAP_EXTRA && d < bestDist) {
+      bestDist = d;
+      best = u;
+    }
+  }
+  if (!best) return false;
+
+  const idx = player.armyVisible.indexOf(best);
+  if (idx >= 0) player.armyVisible.splice(idx, 1);
+
+  const refund = player.raiseCost[best.type] || 1;
+  player.souls += refund;
+  spawnSingleSoul(best.x, best.y);
+
+  if (player.armyVisible.length === 0) {
+    player.dismissMode = false;
+    dismissBtn.classList.remove('active');
+    dismissOverlay.classList.remove('active');
+  }
+  return true;
+}
+
+function updateDismissBtn() {
+  const canDismiss = player.armyVisible.length > 0;
+  dismissBtn.classList.toggle('disabled', !canDismiss);
+  if (!canDismiss && player.dismissMode) {
+    player.dismissMode = false;
+    dismissBtn.classList.remove('active');
+    dismissOverlay.classList.remove('active');
+  }
+}
+
+// =====================
+// АРМИЯ — нежить стоит рядом + агр на мобов
+// =====================
+function updateArmy(dt) {
+  const DETECT_RANGE = 200;
+  const ATTACK_RANGE_EXTRA = 4;
+
+  for (let i = player.armyVisible.length - 1; i >= 0; i--) {
+    const u = player.armyVisible[i];
+    if (u.hurtTimer > 0) u.hurtTimer -= dt;
+    if (u.attackCooldown > 0) u.attackCooldown -= dt;
+    if (u.spawnAnim > 0) u.spawnAnim -= dt;
+
+    let target = null, targetDist = DETECT_RANGE;
+    for (const m of mobs) {
+      const d = Math.hypot(m.x - u.x, m.y - u.y);
+      if (d < targetDist) { targetDist = d; target = m; }
+    }
+
+    let wantX = 0, wantY = 0, speed = u.speed;
+
+    if (target) {
+      const dx = target.x - u.x;
+      const dy = target.y - u.y;
+      const d = Math.hypot(dx, dy);
+      if (d > 5) { wantX = dx / d; wantY = dy / d; }
+      speed = u.speed * 1.2;
+
+      if (d < u.radius + target.radius + ATTACK_RANGE_EXTRA && u.attackCooldown <= 0) {
+        target.hp -= player.undeadDamage;
+        target.hurtTimer = 0.15;
+        u.attackCooldown = 0.8;
+
+        // Агр: только если моб свободен, или это тот же обидчик
+        if (target.aggroTimer <= 0) {
+          target.aggroUndead = u;
+          target.aggroTimer = 3;
+        } else if (target.aggroUndead === u) {
+          target.aggroTimer = 3;
+        }
+
+        if (target.hp <= 0) {
+          const idx = mobs.indexOf(target);
+          if (idx >= 0) killMob(idx);
+        }
+      }
+    } else {
+      const dx = player.x - u.x;
+      const dy = player.y - u.y;
+      const d = Math.hypot(dx, dy);
+      const stopDist = player.radius + u.radius + 30;
+
+      if (d > stopDist + 10) {
+        wantX = dx / d;
+        wantY = dy / d;
+        speed = (d > 300) ? u.speed * 1.4 : u.speed;
+      } else if (d < stopDist - 10) {
+        wantX = -dx / d;
+        wantY = -dy / d;
+        speed = u.speed * 0.8;
+      }
+    }
+
+    const turnSpeed = 5 * dt;
+    u.targetDirX += (wantX - u.targetDirX) * turnSpeed;
+    u.targetDirY += (wantY - u.targetDirY) * turnSpeed;
+    const mag = Math.hypot(u.targetDirX, u.targetDirY);
+    if (mag > 0.001) {
+      u.dirX = u.targetDirX / mag;
+      u.dirY = u.targetDirY / mag;
+    }
+
+    if (wantX !== 0 || wantY !== 0) {
+      u.x += u.dirX * speed;
+      u.y += u.dirY * speed;
+    }
+    u.legPhase += dt * speed * 3;
+
+    const fixed = pushOutOfObjects(u.x, u.y, u.radius);
+    u.x = fixed.x; u.y = fixed.y;
+
+    // Отталкивание от игрока
+    const dxp = u.x - player.x;
+    const dyp = u.y - player.y;
+    const distp = Math.hypot(dxp, dyp);
+    const minDistp = u.radius + player.radius + 6;
+    if (distp < minDistp && distp > 0.001) {
+      const push = minDistp - distp;
+      u.x += (dxp / distp) * push;
+      u.y += (dyp / distp) * push;
+    }
+
+    // Смерть нежити — удаление (без трупа)
+    if (u.hp <= 0) {
+      player.armyVisible.splice(i, 1);
+    }
+  }
+
+  // Отталкивание нежить ↔ нежить
+  for (let i = 0; i < player.armyVisible.length; i++) {
+    for (let j = i + 1; j < player.armyVisible.length; j++) {
+      const a = player.armyVisible[i], b = player.armyVisible[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.hypot(dx, dy);
+      const minDist = a.radius + b.radius;
+      if (dist < minDist && dist > 0.001) {
+        const push = (minDist - dist) / 2;
+        const nx = dx / dist, ny = dy / dist;
+        a.x -= nx * push; a.y -= ny * push;
+        b.x += nx * push; b.y += ny * push;
+      }
+    }
+  }
+}
+
+function updateHiddenArmy(dt) {
+  const REGEN_PER_SEC = 5;
+  for (const u of player.armyHidden) {
+    if (u.hp < u.maxHp) {
+      u.hp = Math.min(u.maxHp, u.hp + REGEN_PER_SEC * dt);
+    }
+  }
+}
+
+// =====================
+// ИГРОК
+// =====================
+function updatePlayer(dt) {
+  player.x += vector.x * player.speed;
+  player.y += vector.y * player.speed;
+
+  if (Math.hypot(vector.x, vector.y) > 0.1) {
+    player.dirX = vector.x;
+    player.dirY = vector.y;
+  }
+
+  const fixed = pushOutOfObjects(player.x, player.y, player.radius);
+  player.x = fixed.x; player.y = fixed.y;
+
+  camera.x += (player.x - camera.x) * 0.15;
+  camera.y += (player.y - camera.y) * 0.15;
+
+  if (!gameState.isNight && player.hp < player.maxHp) {
+    player.hp = Math.min(player.maxHp, player.hp + 0.5 * dt);
+  }
+}
+
+// =====================
+// HUD
+// =====================
+const soulsCountEl = document.getElementById('soulsCount');
+const armyCountEl = document.getElementById('armyCount');
+const hpCountEl = document.getElementById('hpCount');
+const nightCountEl = document.getElementById('nightCount');
+
+function updateHUD() {
+  soulsCountEl.textContent = player.souls;
+  const vis = player.armyVisible.length;
+  const hid = player.armyHidden.length;
+  const total = vis + hid;
+  let text = total + '/' + player.maxArmy;
+  if (hid > 0) text += ` (${hid} в запасе)`;
+  armyCountEl.textContent = text;
+  hpCountEl.textContent = Math.round(player.hp);
+  nightCountEl.textContent = gameState.totalNightsSurvived;
+}
+
+// =====================
+// МЕНЮ ПРОКАЧКИ
+// =====================
+const upgradeMenu = document.getElementById('upgradeMenu');
+const upgradeCardsEl = document.getElementById('upgradeCards');
+const upgradeTitle = document.getElementById('upgradeTitle');
+const upgradeSubtitle = document.getElementById('upgradeSubtitle');
+const skipBtn = document.getElementById('skipBtn');
+
+function openUpgradeMenu() {
+  upgradeTitle.textContent = `🌅 Ночь ${gameState.day - 1} пережита!`;
+  upgradeSubtitle.textContent = `💜 Души: ${player.souls}  ·  Выберите улучшение`;
+
+  const available = UPGRADES.filter(u => upgradeStacks[u.id] < u.maxStacks);
+  const shuffled = available.slice().sort(() => Math.random() - 0.5);
+  currentCards = shuffled.slice(0, 3);
+
+  if (currentCards.length === 0) {
+    closeUpgradeMenu();
+    return;
+  }
+
+  upgradeCardsEl.innerHTML = '';
+  for (const up of currentCards) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const canAfford = player.souls >= up.cost;
+    if (!canAfford) card.classList.add('locked');
+
+    const stacks = upgradeStacks[up.id];
+    card.innerHTML = `
+      <div class="icon">${up.icon}</div>
+      <div class="name">${up.name}</div>
+      <div class="desc">${up.desc}</div>
+      <div class="cost">${up.cost} 💜</div>
+      <div class="stack">${stacks}/${up.maxStacks}</div>
+    `;
+
+    if (canAfford) {
+      let lastClick = 0;
+      function tryChoose(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        const now = performance.now();
+        if (now - lastClick < 300) return;
+        lastClick = now;
+        chooseUpgrade(up);
+      }
+      card.addEventListener('touchstart', tryChoose, { passive: false });
+      card.addEventListener('mousedown', tryChoose);
+      card.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
+    }
+
+    upgradeCardsEl.appendChild(card);
+  }
+
+  upgradeMenu.classList.add('show');
+}
+
+function chooseUpgrade(up) {
+  if (player.souls < up.cost) return;
+  if (upgradeStacks[up.id] >= up.maxStacks) return;
+
+  player.souls -= up.cost;
+  upgradeStacks[up.id]++;
+  up.apply();
+
+  closeUpgradeMenu();
+}
+
+skipBtn.addEventListener('touchstart', e => {
+  e.preventDefault(); e.stopPropagation();
+  closeUpgradeMenu();
+}, { passive: false });
+skipBtn.addEventListener('mousedown', e => {
+  e.preventDefault(); e.stopPropagation();
+  closeUpgradeMenu();
+});
+skipBtn.addEventListener('click', e => {
+  e.preventDefault(); e.stopPropagation();
+});
+
+function closeUpgradeMenu() {
+  upgradeMenu.classList.remove('show');
+  gameState.paused = false;
+  gameState.phaseTimer = DAY_DURATION;
+  gameState.isNight = false;
+  gameState.transition = 0;
+  gameState.waveSpawnTimer = 0;
+  updateTimeUI();
+  writeSave();
+}
+
+// =====================
+// GAME OVER
+// =====================
+const gameOverMenu = document.getElementById('gameOverMenu');
+const gameOverTitle = document.getElementById('gameOverTitle');
+const gameOverStats = document.getElementById('gameOverStats');
+const restartBtn = document.getElementById('restartBtn');
+
+function triggerGameOver() {
+  gameState.gameOver = true;
+  gameState.paused = true;
+
+  player.dismissMode = false;
+  dismissBtn.classList.remove('active');
+  dismissOverlay.classList.remove('active');
+  hideJoystick();
+
+  const record = getRecord();
+  const nights = gameState.totalNightsSurvived;
+  let recordLine = '';
+  if (nights >= record && nights > 0) {
+    recordLine = `<br>🏆 <b style="color:#ffd060">Новый рекорд!</b>`;
+  } else {
+    recordLine = `<br>🏆 Рекорд: <b>${record}</b>`;
+  }
+
+  gameOverTitle.textContent = '💀 Вы пали';
+  gameOverStats.innerHTML =
+    `Пережито ночей: <b>${nights}</b><br>` +
+    `Душ собрано: <b>${player.souls}</b><br>` +
+    `День: <b>${gameState.day}</b>` +
+    recordLine;
+  gameOverMenu.classList.add('show');
+
+  clearSave();
+}
+
+bindMenuButton(restartBtn, returnToMainMenu);
+
+// =====================
+// ГЛАВНОЕ МЕНЮ
+// =====================
+const mainMenu = document.getElementById('mainMenu');
+const playBtn = document.getElementById('playBtn');
+const continueBtn = document.getElementById('continueBtn');
+const recordValueEl = document.getElementById('recordValue');
+
+function showMainMenu() {
+  gameState.inMenu = true;
+  gameState.paused = true;
+  mainMenu.classList.remove('hidden');
+  recordValueEl.textContent = getRecord();
+  continueBtn.style.display = hasSave() ? 'block' : 'none';
+}
+
+function hideMainMenu() {
+  mainMenu.classList.add('hidden');
+  gameState.inMenu = false;
+}
+
+function resetAll() {
+  player.x = 0; player.y = 0;
+  player.dirX = 1; player.dirY = 0;
+  player.hp = 100; player.maxHp = 100;
+  player.speed = 4.5;
+  player.auraRadius = 130;
+  player.auraTickInterval = 0.4;
+  player.auraTickTimer = 0;
+  player.auraDamage = 12;
+  player.souls = 0;
+  player.armyVisible = [];
+  player.armyHidden = [];
+  player.maxArmy = 6;
+  player.dismissMode = false;
+  player.lightRadius = 220;
+  player.undeadDamage = 20;
+  player.undeadBonusHP = 0;
+  player.undeadBonusSpeed = 0;
+  player.soulCollectRange = 110;
+
+  for (const id in upgradeStacks) upgradeStacks[id] = 0;
+
+  mobs.length = 0;
+  souls.length = 0;
+  corpses.length = 0;
+  camera.x = 0; camera.y = 0;
+
+  gameState.day = 1;
+  gameState.isNight = false;
+  gameState.phaseTimer = DAY_DURATION;
+  gameState.transition = 0;
+  gameState.totalNightsSurvived = 0;
+  gameState.paused = false;
+  gameState.waveSpawned = false;
+  gameState.gameOver = false;
+  gameState.waveSpawnTimer = 0;
+
+  updateTimeUI();
+  updateHUD();
+  updateRaiseBadge();
+  updateSummonBtn();
+  updateDismissBtn();
+}
+
+function startNewGame() {
+  clearSave();
+  resetAll();
+  hideMainMenu();
+  gameOverMenu.classList.remove('show');
+  showWaveBanner('☀️ День 1');
+}
+
+function startContinueGame() {
+  const ok = loadSave();
+  hideMainMenu();
+  gameOverMenu.classList.remove('show');
+  if (!ok) {
+    startNewGame();
+    return;
+  }
+  showWaveBanner(`☀️ День ${gameState.day}`);
+}
+
+function returnToMainMenu() {
+  gameOverMenu.classList.remove('show');
+  showMainMenu();
+}
+
+bindMenuButton(playBtn, startNewGame);
+bindMenuButton(continueBtn, startContinueGame);
+
+// =====================
+// ОБЩИЙ UPDATE
+// =====================
+function update() {
+  const now = performance.now();
+  const dt = Math.min((now - lastFrameTime) / 1000, 0.05);
+  lastFrameTime = now;
+  time += dt;
+
+  if (gameState.inMenu) {
+    camera.x = Math.cos(time * 0.15) * 400;
+    camera.y = Math.sin(time * 0.15) * 400;
+    updateChunks();
+    return;
+  }
+
+  if (gameState.gameOver) {
+    updateBanner(dt);
+    return;
+  }
+
+  updateDayNight(dt);
+  updateBanner(dt);
+
+  if (!gameState.paused) {
+    updatePlayer(dt);
+    updateChunks();
+    updateAura(dt);
+    updateMobs(dt);
+    updateSouls(dt);
+    updateArmy(dt);
+    updateHiddenArmy(dt);
+    cullMobs();
+
+    gameState.waveSpawnTimer -= dt;
+    if (gameState.waveSpawnTimer <= 0) {
+      if (gameState.isNight) {
+        gameState.waveSpawnTimer = gameState.waveSpawnInterval;
+        spawnMiniWave(gameState.day);
+      } else {
+        gameState.waveSpawnTimer = gameState.daySpawnInterval;
+        if (mobs.length < 12) spawnRandomMob(gameState.day);
+      }
+    }
+
+    updateRaiseBadge();
+    updateSummonBtn();
+    updateDismissBtn();
+    updateHUD();
+  }
+}
+
+// =====================
+// ОТРИСОВКА
+// =====================
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  const zoom = getZoom();
+  const offsetX = W / 2 - camera.x;
+  const offsetY = H / 2 - camera.y;
+
+  const viewW = W / zoom;
+  const viewH = H / zoom;
+  const viewLeft   = camera.x - viewW / 2 - 100;
+  const viewRight  = camera.x + viewW / 2 + 100;
+  const viewTop    = camera.y - viewH / 2 - 100;
+  const viewBottom = camera.y + viewH / 2 + 100;
+
+  drawGrassBackground(offsetX, offsetY, zoom);
+
+  const visibleChunks = getVisibleChunks(viewLeft, viewRight, viewTop, viewBottom);
+
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-W / 2, -H / 2);
+
+  drawBlades(visibleChunks, offsetX, offsetY);
+  drawCorpses(offsetX, offsetY, viewLeft, viewRight, viewTop, viewBottom);
+
+  if (!gameState.inMenu) drawAura(offsetX, offsetY);
+
+  const renderables = [];
+  for (const c of visibleChunks)
+    for (const obj of c.objects) renderables.push({ kind: 'object', data: obj });
+  for (const m of mobs) {
+    if (m.x < viewLeft - 200 || m.x > viewRight + 200 || m.y < viewTop - 200 || m.y > viewBottom + 200) continue;
+    renderables.push({ kind: 'mob', data: m });
+  }
+  for (const u of player.armyVisible) {
+    if (u.x < viewLeft || u.x > viewRight || u.y < viewTop || u.y > viewBottom) continue;
+    renderables.push({ kind: 'undead', data: u });
+  }
+  if (!gameState.inMenu) renderables.push({ kind: 'player', data: player });
+  renderables.sort((a, b) => a.data.y - b.data.y);
+
+  for (const c of visibleChunks)
+    for (const obj of c.objects) drawShadow(obj, offsetX, offsetY);
+
+  for (const r of renderables) {
+    if (r.kind === 'object') drawObject(r.data, offsetX, offsetY);
+    else if (r.kind === 'mob') drawMob(r.data, offsetX, offsetY);
+    else if (r.kind === 'undead') drawUndead(r.data, offsetX, offsetY);
+    else drawPlayer(offsetX, offsetY);
+  }
+
+  drawSouls(offsetX, offsetY);
+
+  ctx.restore();
+
+  if (gameState.transition > 0.01 && !gameState.inMenu) {
+    drawNightLighting(offsetX, offsetY, zoom);
+  }
+}
+
+// =====================
+// НОЧНОЕ ОСВЕЩЕНИЕ
+// =====================
+function drawNightLighting(offsetX, offsetY, zoom) {
+  const alpha = gameState.transition;
+
+  if (!drawNightLighting.buf || drawNightLighting.bufW !== W || drawNightLighting.bufH !== H) {
+    const b = document.createElement('canvas');
+    b.width = W; b.height = H;
+    drawNightLighting.buf = b;
+    drawNightLighting.bufCtx = b.getContext('2d');
+    drawNightLighting.bufW = W;
+    drawNightLighting.bufH = H;
+  }
+  const bctx = drawNightLighting.bufCtx;
+
+  bctx.clearRect(0, 0, W, H);
+  bctx.fillStyle = `rgba(8, 4, 32, ${0.88 * alpha})`;
+  bctx.fillRect(0, 0, W, H);
+
+  bctx.globalCompositeOperation = 'destination-out';
+
+  function worldToScreen(wx, wy) {
+    return {
+      x: (wx + offsetX - W / 2) * zoom + W / 2,
+      y: (wy + offsetY - H / 2) * zoom + H / 2
+    };
+  }
+
+  const ps = worldToScreen(player.x, player.y);
+  drawLightHole(bctx, ps.x, ps.y, player.lightRadius * zoom, alpha);
+
+  for (const u of player.armyVisible) {
+    const us = worldToScreen(u.x, u.y);
+    drawLightHole(bctx, us.x, us.y, u.lightRadius * zoom, alpha * 0.9);
+  }
+
+  bctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(drawNightLighting.buf, 0, 0);
+}
+
+function drawLightHole(bctx, x, y, radius, intensity) {
+  const grd = bctx.createRadialGradient(x, y, radius * 0.15, x, y, radius);
+  grd.addColorStop(0, `rgba(0,0,0,${1 * intensity})`);
+  grd.addColorStop(0.55, `rgba(0,0,0,${0.85 * intensity})`);
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  bctx.fillStyle = grd;
+  bctx.beginPath();
+  bctx.arc(x, y, radius, 0, Math.PI * 2);
+  bctx.fill();
+}
+
+// =====================
+// ФОН
+// =====================
+function drawGrassBackground(offsetX, offsetY, zoom) {
+  const modX = ((offsetX % 256) + 256) % 256;
+  const modY = ((offsetY % 256) + 256) % 256;
+
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-W / 2, -H / 2);
+
+  ctx.translate(modX, modY);
+  ctx.fillStyle = grassPattern;
+  ctx.fillRect(-modX - 512, -modY - 512, W / zoom + 1024, H / zoom + 1024);
+  ctx.restore();
+
+  const vgrd = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.35, W/2, H/2, Math.max(W,H)*0.7);
+  vgrd.addColorStop(0, 'rgba(30, 0, 60, 0)');
+  vgrd.addColorStop(1, 'rgba(20, 0, 40, 0.55)');
+  ctx.fillStyle = vgrd;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// =====================
+// ТРАВА
+// =====================
+function drawBlades(visibleChunks, offsetX, offsetY) {
+  const windBaseAmp = 3.5;
+  const windSpeed = 1.8;
+  ctx.lineCap = 'round';
+  for (const chunk of visibleChunks) {
+    for (const b of chunk.blades) {
+      const bx = b.x + offsetX;
+      const by = b.y + offsetY;
+      if (bx < -50 || bx > W + 50 || by < -50 || by > H + 50) continue;
+      const wave = Math.sin(time * windSpeed + b.x * 0.02 + b.y * 0.015);
+      const personal = Math.sin(time * b.speed * 2 + b.phase);
+      const swayX = (wave * windBaseAmp + personal * 1.5);
+      ctx.strokeStyle = `hsl(${b.hue}, 45%, ${22 + Math.sin(b.phase) * 5}%)`;
+      ctx.lineWidth = b.width;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.quadraticCurveTo(bx + swayX * 0.3, by - b.height * 0.6, bx + swayX, by - b.height);
+      ctx.stroke();
+    }
+  }
+}
+
+// =====================
+// АУРА
+// =====================
+function drawAura(offsetX, offsetY) {
+  const px = player.x + offsetX;
+  const py = player.y + offsetY;
+
+  const pulse = 1 + Math.sin(time * 3) * 0.04;
+  const r = player.auraRadius * pulse;
+
+  const grd = ctx.createRadialGradient(px, py, r * 0.2, px, py, r);
+  grd.addColorStop(0, 'rgba(160, 80, 220, 0.05)');
+  grd.addColorStop(0.6, 'rgba(120, 40, 200, 0.10)');
+  grd.addColorStop(0.9, 'rgba(90, 20, 180, 0.18)');
+  grd.addColorStop(1, 'rgba(90, 20, 180, 0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(px, py, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = `rgba(180, 100, 255, ${0.3 + Math.sin(time * 3) * 0.15})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(px, py, r, 0, Math.PI * 2);
+  ctx.stroke();
+
+  for (let i = 0; i < 5; i++) {
+    const ang = time * 0.8 + i * (Math.PI * 2 / 5);
+    const rad = r * (0.5 + Math.sin(time * 2 + i) * 0.2);
+    const cx = px + Math.cos(ang) * rad;
+    const cy = py + Math.sin(ang) * rad;
+    ctx.fillStyle = 'rgba(200, 130, 255, 0.7)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// =====================
+// ТРУПЫ
+// =====================
+function drawCorpses(offsetX, offsetY, viewLeft, viewRight, viewTop, viewBottom) {
+  for (const c of corpses) {
+    if (c.x < viewLeft || c.x > viewRight || c.y < viewTop || c.y > viewBottom) continue;
+    drawCorpse(c, offsetX, offsetY);
+  }
+}
+
+function drawCorpse(c, offsetX, offsetY) {
+  const x = c.x + offsetX;
+  const y = c.y + offsetY;
+  const r = c.radius;
+
+  ctx.fillStyle = 'rgba(80, 10, 20, 0.55)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + r * 0.3, r * 1.6, r * 0.55, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (c.type === 'satyr') drawCorpseSatyr(x, y, r, c.rot);
+  else drawCorpseOgre(x, y, r, c.rot);
+
+  if (gameState.inMenu) return;
+  const dist = Math.hypot(c.x - player.x, c.y - player.y);
+  if (dist < player.raiseRadius) {
+    const totalArmy = player.armyVisible.length + player.armyHidden.length;
+    const canRaise = player.souls >= (player.raiseCost[c.type] || 1)
+                     && totalArmy < player.maxArmy;
+    if (canRaise) {
+      const pulse = 0.4 + Math.sin(time * 4) * 0.3;
+      ctx.strokeStyle = `rgba(180, 100, 255, ${pulse})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, r + 10, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawCorpseSatyr(x, y, r, rot) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot * Math.PI / 2);
+
+  ctx.strokeStyle = '#3a2a10';
+  ctx.lineWidth = r * 0.35;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.8, r * 0.5);
+  ctx.lineTo(-r * 1.2, r * 0.9);
+  ctx.moveTo(-r * 0.8, -r * 0.5);
+  ctx.lineTo(-r * 1.2, -r * 0.9);
+  ctx.stroke();
+
+  const grd = ctx.createRadialGradient(-r * 0.2, -r * 0.2, 2, 0, 0, r * 1.2);
+  grd.addColorStop(0, '#5a7a3a');
+  grd.addColorStop(1, '#2a3a18');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, r * 1.1, r * 0.75, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#4a6a2e';
+  ctx.beginPath();
+  ctx.arc(r * 1.05, 0, r * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#2a1a08';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(r * 1.25, -r * 0.25);
+  ctx.lineTo(r * 1.5, -r * 0.5);
+  ctx.moveTo(r * 1.25, r * 0.25);
+  ctx.lineTo(r * 1.5, r * 0.5);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#0a0a0a';
+  ctx.lineWidth = 1.8;
+  const eyeX = r * 1.15, eyeY = -r * 0.1;
+  ctx.beginPath();
+  ctx.moveTo(eyeX - 3, eyeY - 3); ctx.lineTo(eyeX + 3, eyeY + 3);
+  ctx.moveTo(eyeX + 3, eyeY - 3); ctx.lineTo(eyeX - 3, eyeY + 3);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCorpseOgre(x, y, r, rot) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot * Math.PI / 2);
+
+  ctx.strokeStyle = '#2a1a10';
+  ctx.lineWidth = r * 0.4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.7, r * 0.6);
+  ctx.lineTo(-r * 1.4, r * 1.0);
+  ctx.moveTo(-r * 0.7, -r * 0.6);
+  ctx.lineTo(-r * 1.4, -r * 1.0);
+  ctx.stroke();
+
+  const grd = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 4, 0, 0, r * 1.4);
+  grd.addColorStop(0, '#5a4a3a');
+  grd.addColorStop(1, '#2a1e14');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, r * 1.35, r * 1.0, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#3a2a1c';
+  ctx.beginPath();
+  ctx.ellipse(-r * 0.3, -r * 0.3, r * 0.6, r * 0.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#4a3a2a';
+  ctx.beginPath();
+  ctx.arc(r * 1.1, 0, r * 0.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#f0e8d0';
+  ctx.beginPath();
+  ctx.moveTo(r * 1.4, r * 0.1);
+  ctx.lineTo(r * 1.6, r * 0.25);
+  ctx.lineTo(r * 1.35, r * 0.3);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = '#0a0a0a';
+  ctx.lineWidth = 2.2;
+  const eyeX = r * 1.15, eyeY = -r * 0.15;
+  ctx.beginPath();
+  ctx.moveTo(eyeX - 4, eyeY - 4); ctx.lineTo(eyeX + 4, eyeY + 4);
+  ctx.moveTo(eyeX + 4, eyeY - 4); ctx.lineTo(eyeX - 4, eyeY + 4);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(r * 1.6, -r * 0.7);
+  ctx.rotate(0.6);
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(-r * 0.1, -r * 0.8, r * 0.2, r * 1.2);
+  ctx.beginPath();
+  ctx.arc(0, -r * 0.8, r * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+// =====================
+// ДУШИ
+// =====================
+function drawSouls(offsetX, offsetY) {
+  for (const s of souls) {
+    const x = s.x + offsetX;
+    const y = s.y + offsetY + s.bob;
+    let alpha = 1;
+    if (s.life < 5) alpha = 0.4 + Math.abs(Math.sin(time * 8)) * 0.6;
+
+    ctx.globalAlpha = alpha * 0.6;
+    ctx.fillStyle = '#a05af0';
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#e0b0ff';
+    ctx.beginPath();
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// =====================
+// НЕЖИТЬ
+// =====================
+function drawUndead(u, offsetX, offsetY) {
+  const x = u.x + offsetX;
+  const y = u.y + offsetY;
+
+  let scale = 1, alpha = 1;
+  if (u.spawnAnim > 0) {
+    const t = 1 - u.spawnAnim / 0.4;
+    scale = 0.3 + t * 0.7;
+    alpha = t;
+  }
+
+  const moving = Math.hypot(u.dirX, u.dirY) > 0.1;
+  const bob = moving ? Math.sin(time * 8 + u.bobPhase) * 2 : Math.sin(time * 2 + u.bobPhase) * 1;
+  const drawY = y + bob;
+
+  ctx.globalAlpha = alpha;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + u.radius * 0.7, u.radius * 0.9 * scale, u.radius * 0.35 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const ug = ctx.createRadialGradient(x, drawY, 1, x, drawY, u.radius * 2 * scale);
+  ug.addColorStop(0, 'rgba(140, 80, 220, 0.25)');
+  ug.addColorStop(1, 'rgba(140, 80, 220, 0)');
+  ctx.fillStyle = ug;
+  ctx.beginPath();
+  ctx.arc(x, drawY, u.radius * 2 * scale, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (u.type === 'satyr') drawSkeletonSatyr(x, drawY, u, scale);
+  else drawSkeletonOgre(x, drawY, u, scale);
+
+  if (u.hp < u.maxHp) {
+    const w = u.radius * 2.2;
+    const hpRatio = u.hp / u.maxHp;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(x - w / 2, drawY - u.radius - 12, w, 3);
+    ctx.fillStyle = '#7affc0';
+    ctx.fillRect(x - w / 2, drawY - u.radius - 12, w * hpRatio, 3);
+  }
+
+  if (u.hurtTimer > 0) {
+    ctx.fillStyle = `rgba(255, 100, 100, ${u.hurtTimer * 3})`;
+    ctx.beginPath();
+    ctx.arc(x, drawY, u.radius + 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (player.dismissMode) {
+    const pulse = 0.5 + Math.sin(time * 6) * 0.4;
+    ctx.strokeStyle = `rgba(255, 80, 80, ${pulse})`;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(x, drawY, u.radius + 10, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = `rgba(255, 80, 80, ${pulse})`;
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('✕', x, drawY - u.radius - 18);
+  }
+
+  ctx.globalAlpha = 1;
+}
+
+function drawSkeletonSatyr(x, y, u, scale = 1) {
+  const r = u.radius * scale;
+
+  ctx.strokeStyle = '#e0d8c0';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  const legSwing = Math.sin(u.legPhase) * r * 0.4;
+
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.3, y + r * 0.2);
+  ctx.lineTo(x - r * 0.5 + legSwing, y + r * 0.9);
+  ctx.moveTo(x + r * 0.3, y + r * 0.2);
+  ctx.lineTo(x + r * 0.5 - legSwing, y + r * 0.9);
+  ctx.stroke();
+
+  ctx.fillStyle = '#2a1a08';
+  ctx.beginPath();
+  ctx.arc(x - r * 0.5 + legSwing, y + r * 0.9, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + r * 0.5 - legSwing, y + r * 0.9, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#e0d8c0';
+  ctx.lineWidth = 2;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(x + i * 3, y - r * 0.4);
+    ctx.quadraticCurveTo(x + i * 3 + 2, y, x + i * 3, y + r * 0.4);
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(x, y - r * 0.5);
+  ctx.lineTo(x, y + r * 0.5);
+  ctx.stroke();
+
+  ctx.fillStyle = '#e0d8c0';
+  ctx.beginPath();
+  ctx.arc(x, y - r * 0.7, r * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#d0c8a8';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.3, y - r * 0.9);
+  ctx.lineTo(x - r * 0.6, y - r * 1.3);
+  ctx.moveTo(x + r * 0.3, y - r * 0.9);
+  ctx.lineTo(x + r * 0.6, y - r * 1.3);
+  ctx.stroke();
+
+  ctx.fillStyle = '#8a2be2';
+  ctx.beginPath();
+  ctx.arc(x - r * 0.2, y - r * 0.7, r * 0.12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + r * 0.2, y - r * 0.7, r * 0.12, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawSkeletonOgre(x, y, u, scale = 1) {
+  const r = u.radius * scale;
+
+  ctx.strokeStyle = '#d0c8b0';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  const legSwing = Math.sin(u.legPhase) * r * 0.35;
+
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.4, y + r * 0.2);
+  ctx.lineTo(x - r * 0.55 + legSwing, y + r * 1.0);
+  ctx.moveTo(x + r * 0.4, y + r * 0.2);
+  ctx.lineTo(x + r * 0.55 - legSwing, y + r * 1.0);
+  ctx.stroke();
+
+  ctx.fillStyle = '#3a2a1c';
+  ctx.beginPath();
+  ctx.ellipse(x - r * 0.55 + legSwing, y + r * 1.05, r * 0.2, r * 0.1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + r * 0.55 - legSwing, y + r * 1.05, r * 0.2, r * 0.1, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#e0d8c0';
+  ctx.beginPath();
+  ctx.ellipse(x, y + r * 0.15, r * 0.5, r * 0.3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#e0d8c0';
+  ctx.lineWidth = 3;
+  for (let i = -3; i <= 3; i++) {
+    const curve = r * 0.9;
+    ctx.beginPath();
+    ctx.moveTo(x + i * r * 0.18, y - r * 0.6);
+    ctx.quadraticCurveTo(x + i * r * 0.18 + curve * 0.15, y, x + i * r * 0.18, y + r * 0.4);
+    ctx.stroke();
+  }
+
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(x, y - r * 0.7);
+  ctx.lineTo(x, y + r * 0.5);
+  ctx.stroke();
+
+  ctx.fillStyle = '#e0d8c0';
+  ctx.beginPath();
+  ctx.arc(x, y - r * 0.9, r * 0.7, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#d0c8b0';
+  ctx.beginPath();
+  ctx.ellipse(x, y - r * 0.5, r * 0.4, r * 0.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#f0e8d0';
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.15, y - r * 0.5);
+  ctx.lineTo(x - r * 0.1, y - r * 0.35);
+  ctx.lineTo(x - r * 0.2, y - r * 0.4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x + r * 0.15, y - r * 0.5);
+  ctx.lineTo(x + r * 0.1, y - r * 0.35);
+  ctx.lineTo(x + r * 0.2, y - r * 0.4);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#8a2be2';
+  ctx.shadowColor = '#c060ff';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.arc(x - r * 0.25, y - r * 0.95, r * 0.14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + r * 0.25, y - r * 0.95, r * 0.14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = '#d0c8b0';
+  ctx.lineWidth = 4;
+  const armSwing = Math.sin(u.legPhase + 1) * r * 0.3;
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.8, y - r * 0.3);
+  ctx.lineTo(x - r * 1.05, y + r * 0.3 + armSwing);
+  ctx.moveTo(x + r * 0.8, y - r * 0.3);
+  ctx.lineTo(x + r * 1.05, y + r * 0.3 - armSwing);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(x + r * 1.1, y + r * 0.4 - armSwing);
+  ctx.rotate(0.5 + Math.sin(u.legPhase) * 0.1);
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(-r * 0.08, -r * 0.9, r * 0.16, r * 1.2);
+  ctx.fillStyle = '#5a3a1e';
+  ctx.beginPath();
+  ctx.arc(0, -r * 0.9, r * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// =====================
+// ТЕНИ И ОБЪЕКТЫ
+// =====================
+function drawShadow(obj, offsetX, offsetY) {
+  const x = obj.x + offsetX;
+  const y = obj.y + offsetY + obj.radius * 0.6;
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(x, y, obj.radius * obj.size * 0.9, obj.radius * obj.size * 0.35, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawObject(obj, offsetX, offsetY) {
+  const x = obj.x + offsetX;
+  const y = obj.y + offsetY;
+  const s = obj.size;
+  if (obj.type === 'tree') drawTree(x, y, s);
+  else if (obj.type === 'bush') drawBush(x, y, s);
+  else drawRock(x, y, s, obj.seed);
+}
+
+function drawTree(x, y, s) {
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(x - 5 * s, y - 10 * s, 10 * s, 20 * s);
+  const grd = ctx.createRadialGradient(x - 10, y - 30, 5, x, y - 20, 35);
+  grd.addColorStop(0, '#3a6b2a');
+  grd.addColorStop(1, '#12280e');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(x, y - 30 * s, 24 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#2a5420';
+  ctx.beginPath();
+  ctx.arc(x - 16 * s, y - 20 * s, 18 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + 16 * s, y - 20 * s, 18 * s, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBush(x, y, s) {
+  const grd = ctx.createRadialGradient(x - 6, y - 6, 3, x, y, 22 * s);
+  grd.addColorStop(0, '#4a8a4a');
+  grd.addColorStop(1, '#123a12');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(x - 8 * s, y, 12 * s, 0, Math.PI * 2);
+  ctx.arc(x + 8 * s, y, 12 * s, 0, Math.PI * 2);
+  ctx.arc(x, y - 6 * s, 14 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#6a2a3a';
+  ctx.beginPath();
+  ctx.arc(x + 4 * s, y - 4 * s, 2.5, 0, Math.PI * 2);
+  ctx.arc(x - 6 * s, y + 2 * s, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawRock(x, y, s, seed) {
+  ctx.save();
+  ctx.translate(x, y);
+  const grd = ctx.createRadialGradient(-6, -6, 2, 0, 0, 20 * s);
+  grd.addColorStop(0, '#8a8a9a');
+  grd.addColorStop(1, '#2a2a3a');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  for (let i = 0; i < 7; i++) {
+    const ang = (i / 7) * Math.PI * 2 + seed;
+    const rad = (14 + seededRandom(seed + i) * 6) * s;
+    const px = Math.cos(ang) * rad;
+    const py = Math.sin(ang) * rad * 0.8;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// =====================
+// ИГРОК
+// =====================
+function drawPlayer(offsetX, offsetY) {
+  const px = player.x + offsetX;
+  const py = player.y + offsetY;
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.beginPath();
+  ctx.arc(px, py + 8, player.radius + 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  const grd = ctx.createRadialGradient(px - 6, py - 8, 4, px, py, player.radius);
+  grd.addColorStop(0, '#5a3a8a');
+  grd.addColorStop(1, '#1a0d33');
+  ctx.fillStyle = grd;
+  ctx.shadowColor = '#a050ff';
+  ctx.shadowBlur = 20;
+  ctx.beginPath();
+  ctx.arc(px, py, player.radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#0d0620';
+  ctx.beginPath();
+  ctx.arc(px, py - 4, player.radius * 0.85, Math.PI, 0);
+  ctx.fill();
+
+  const mag = Math.hypot(player.dirX, player.dirY) || 1;
+  const nx = player.dirX / mag, ny = player.dirY / mag;
+  const perpX = -ny, perpY = nx;
+  const eyeOffset = 6, eyeDist = 4;
+
+  for (let s = -1; s <= 1; s += 2) {
+    const ex = px + nx * eyeDist + perpX * eyeOffset * s;
+    const ey = py + ny * eyeDist + perpY * eyeOffset * s;
+    const gg = ctx.createRadialGradient(ex, ey, 0, ex, ey, 6);
+    gg.addColorStop(0, '#ff80ff');
+    gg.addColorStop(1, 'rgba(160, 50, 220, 0)');
+    ctx.fillStyle = gg;
+    ctx.beginPath();
+    ctx.arc(ex, ey, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffe0ff';
+    ctx.beginPath();
+    ctx.arc(ex, ey, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const handX = px + perpX * player.radius * 0.9;
+  const handY = py + perpY * player.radius * 0.9;
+  ctx.strokeStyle = '#3a2410';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(handX - ny * 8, handY + nx * 8);
+  ctx.lineTo(handX + ny * 20, handY - nx * 20);
+  ctx.stroke();
+
+  const tipX = handX + ny * 20;
+  const tipY = handY - nx * 20;
+  const cg = ctx.createRadialGradient(tipX, tipY, 0, tipX, tipY, 8);
+  cg.addColorStop(0, '#d0a0ff');
+  cg.addColorStop(1, 'rgba(160, 80, 220, 0)');
+  ctx.fillStyle = cg;
+  ctx.beginPath();
+  ctx.arc(tipX, tipY, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#e0c0ff';
+  ctx.beginPath();
+  ctx.arc(tipX, tipY, 3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// =====================
+// МОБЫ (ОТРИСОВКА)
+// =====================
+function drawMob(m, offsetX, offsetY) {
+  const x = m.x + offsetX;
+  const y = m.y + offsetY;
+  const moving = Math.hypot(m.dirX, m.dirY) > 0.1;
+
+  const isDayIdle = !gameState.isNight && m.state === 'idle';
+  if (isDayIdle) ctx.globalAlpha = 0.85;
+
+  const bob = moving ? Math.sin(time * 10 + m.bobPhase) * 1.5 : 0;
+  const drawY = y + bob;
+
+  const isFleeing = !gameState.isNight && MOB_TYPES[m.type].fleeWhenDay && m.state === 'flee';
+  if (isFleeing) ctx.globalAlpha = 0.7;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + m.radius * 0.7, m.radius * 0.9, m.radius * 0.35, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (m.type === 'satyr') drawSatyr(x, drawY, m);
+  else drawOgre(x, drawY, m);
+
+  if (m.hp < m.maxHp) {
+    const w = m.radius * 2.2;
+    const hpRatio = m.hp / m.maxHp;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(x - w / 2, drawY - m.radius - 12, w, 3);
+    ctx.fillStyle = '#ff5050';
+    ctx.fillRect(x - w / 2, drawY - m.radius - 12, w * hpRatio, 3);
+  }
+
+  if (m.hurtTimer > 0) {
+    ctx.fillStyle = `rgba(255, 100, 100, ${m.hurtTimer * 3})`;
+    ctx.beginPath();
+    ctx.arc(x, drawY, m.radius + 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.globalAlpha = 1;
+}
+
+function drawSatyr(x, y, m) {
+  const r = m.radius;
+  const mag = Math.hypot(m.dirX, m.dirY) || 1;
+  const nx = m.dirX / mag, ny = m.dirY / mag;
+
+  const legSwing = Math.sin(m.legPhase) * r * 0.35;
+  ctx.strokeStyle = '#2a1a08';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.35, y + r * 0.3);
+  ctx.lineTo(x - r * 0.5 + legSwing, y + r * 1.0);
+  ctx.moveTo(x + r * 0.35, y + r * 0.3);
+  ctx.lineTo(x + r * 0.5 - legSwing, y + r * 1.0);
+  ctx.stroke();
+
+  ctx.fillStyle = '#0a0a0a';
+  ctx.beginPath();
+  ctx.arc(x - r * 0.5 + legSwing, y + r * 1.0, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + r * 0.5 - legSwing, y + r * 1.0, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  const grd = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 2, x, y, r * 1.2);
+  grd.addColorStop(0, '#7a9a4a');
+  grd.addColorStop(0.6, '#5a7a2e');
+  grd.addColorStop(1, '#2a3a10');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.ellipse(x, y + r * 0.1, r * 0.85, r * 0.75, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const tailX = x - nx * r * 0.9 - ny * r * 0.2;
+  const tailY = y - ny * r * 0.9 + nx * r * 0.2;
+  ctx.strokeStyle = '#3a2a10';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x - nx * r * 0.7, y - ny * r * 0.7);
+  ctx.quadraticCurveTo(
+    tailX - nx * r * 0.3, tailY - ny * r * 0.3,
+    tailX, tailY - r * 0.4
+  );
+  ctx.stroke();
+
+  const headX = x + nx * r * 0.7;
+  const headY = y + ny * r * 0.7 - r * 0.2;
+  const hg = ctx.createRadialGradient(headX - 3, headY - 3, 2, headX, headY, r * 0.55);
+  hg.addColorStop(0, '#8aa85a');
+  hg.addColorStop(1, '#3a4a18');
+  ctx.fillStyle = hg;
+  ctx.beginPath();
+  ctx.arc(headX, headY, r * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  const perpX = -ny, perpY = nx;
+  ctx.strokeStyle = '#2a1a08';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(headX - perpX * r * 0.25, headY - r * 0.4);
+  ctx.lineTo(headX - perpX * r * 0.3, headY - r * 0.7);
+  ctx.moveTo(headX + perpX * r * 0.25, headY - r * 0.4);
+  ctx.lineTo(headX + perpX * r * 0.3, headY - r * 0.7);
+  ctx.stroke();
+
+  ctx.fillStyle = '#f0d040';
+  ctx.shadowColor = '#ffee80';
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  ctx.arc(headX + nx * r * 0.15 + perpX * r * 0.18, headY + ny * r * 0.15 + perpY * r * 0.18, r * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(headX + nx * r * 0.15 - perpX * r * 0.18, headY + ny * r * 0.15 - perpY * r * 0.18, r * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#4a5a28';
+  ctx.beginPath();
+  ctx.moveTo(headX + perpX * r * 0.4, headY - r * 0.1);
+  ctx.lineTo(headX + perpX * r * 0.7, headY - r * 0.35);
+  ctx.lineTo(headX + perpX * r * 0.4, headY + r * 0.15);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(headX - perpX * r * 0.4, headY - r * 0.1);
+  ctx.lineTo(headX - perpX * r * 0.7, headY - r * 0.35);
+  ctx.lineTo(headX - perpX * r * 0.4, headY + r * 0.15);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawOgre(x, y, m) {
+  const r = m.radius;
+  const mag = Math.hypot(m.dirX, m.dirY) || 1;
+  const nx = m.dirX / mag, ny = m.dirY / mag;
+  const perpX = -ny, perpY = nx;
+
+  const legSwing = Math.sin(m.legPhase) * r * 0.3;
+  ctx.strokeStyle = '#2a1a10';
+  ctx.lineWidth = 10;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.4, y + r * 0.3);
+  ctx.lineTo(x - r * 0.55 + legSwing, y + r * 1.0);
+  ctx.moveTo(x + r * 0.4, y + r * 0.3);
+  ctx.lineTo(x + r * 0.55 - legSwing, y + r * 1.0);
+  ctx.stroke();
+
+  ctx.fillStyle = '#1a0e08';
+  ctx.beginPath();
+  ctx.ellipse(x - r * 0.55 + legSwing, y + r * 1.05, r * 0.22, r * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + r * 0.55 - legSwing, y + r * 1.05, r * 0.22, r * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const grd = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 4, x, y + r * 0.1, r * 1.4);
+  grd.addColorStop(0, '#6a5040');
+  grd.addColorStop(0.5, '#4a3424');
+  grd.addColorStop(1, '#2a1a10');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.ellipse(x, y + r * 0.1, r * 1.1, r * 0.95, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#3a2a1c';
+  ctx.beginPath();
+  ctx.ellipse(x - nx * r * 0.3, y - r * 0.5, r * 0.7, r * 0.4, Math.atan2(ny, nx), 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(20, 12, 8, 0.6)';
+  ctx.beginPath();
+  ctx.arc(x - r * 0.4, y + r * 0.2, r * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + r * 0.3, y - r * 0.1, r * 0.15, 0, Math.PI * 2);
+  ctx.fill();
+
+  const headX = x + nx * r * 0.95;
+  const headY = y + ny * r * 0.95 - r * 0.2;
+  const hg = ctx.createRadialGradient(headX - 3, headY - 3, 3, headX, headY, r * 0.7);
+  hg.addColorStop(0, '#7a5a44');
+  hg.addColorStop(1, '#3a2418');
+  ctx.fillStyle = hg;
+  ctx.beginPath();
+  ctx.arc(headX, headY, r * 0.55, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#2a1a10';
+  ctx.beginPath();
+  ctx.ellipse(headX + nx * r * 0.2, headY + r * 0.35, r * 0.35, r * 0.18, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#f0e8d0';
+  ctx.beginPath();
+  ctx.moveTo(headX + nx * r * 0.35 + perpX * r * 0.15, headY + r * 0.3);
+  ctx.lineTo(headX + nx * r * 0.35 + perpX * r * 0.18, headY + r * 0.05);
+  ctx.lineTo(headX + nx * r * 0.35 + perpX * r * 0.08, headY + r * 0.25);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(headX + nx * r * 0.35 - perpX * r * 0.15, headY + r * 0.3);
+  ctx.lineTo(headX + nx * r * 0.35 - perpX * r * 0.18, headY + r * 0.05);
+  ctx.lineTo(headX + nx * r * 0.35 - perpX * r * 0.08, headY + r * 0.25);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#ff3020';
+  ctx.shadowColor = '#ff8060';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.arc(headX + nx * r * 0.2 + perpX * r * 0.2, headY - r * 0.05 + perpY * r * 0.2, r * 0.1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(headX + nx * r * 0.2 - perpX * r * 0.2, headY - r * 0.05 - perpY * r * 0.2, r * 0.1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = '#2a1a08';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(headX + perpX * r * 0.4, headY - r * 0.4);
+  ctx.quadraticCurveTo(
+    headX + perpX * r * 0.7, headY - r * 0.7,
+    headX + perpX * r * 0.5, headY - r * 0.9
+  );
+  ctx.moveTo(headX - perpX * r * 0.4, headY - r * 0.4);
+  ctx.quadraticCurveTo(
+    headX - perpX * r * 0.7, headY - r * 0.7,
+    headX - perpX * r * 0.5, headY - r * 0.9
+  );
+  ctx.stroke();
+
+  const armSwing = Math.sin(m.legPhase + 1) * r * 0.3;
+  ctx.strokeStyle = '#3a2a1c';
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.8, y - r * 0.3);
+  ctx.lineTo(x - r * 1.1, y + r * 0.3 + armSwing);
+  ctx.moveTo(x + r * 0.8, y - r * 0.3);
+  ctx.lineTo(x + r * 1.1, y + r * 0.3 - armSwing);
+  ctx.stroke();
+
+  const dubX = x + r * 1.15;
+  const dubY = y + r * 0.4 - armSwing;
+  ctx.save();
+  ctx.translate(dubX, dubY);
+  ctx.rotate(0.6 + Math.sin(m.legPhase) * 0.15);
+
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(-r * 0.07, -r * 1.2, r * 0.14, r * 1.5);
+
+  const dg = ctx.createRadialGradient(-3, -r * 1.0, 2, 0, -r * 1.0, r * 0.45);
+  dg.addColorStop(0, '#6a4a28');
+  dg.addColorStop(1, '#2a1a0c');
+  ctx.fillStyle = dg;
+  ctx.beginPath();
+  ctx.arc(0, -r * 1.0, r * 0.42, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#8a8070';
+  for (let i = 0; i < 5; i++) {
+    const ang = (i / 5) * Math.PI * 2 + m.legPhase * 0.3;
+    const sx = Math.cos(ang) * r * 0.42;
+    const sy = Math.sin(ang) * r * 0.42 - r * 1.0;
+    ctx.beginPath();
+    ctx.arc(sx, sy, r * 0.06, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+// =====================
+// ЦИКЛ
+// =====================
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+buildGrassPattern();
+resize();
+showMainMenu();
+loop();
+</script>
+
 </body>
 </html>
