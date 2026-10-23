@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Некромант — Волны · Выживание · Армия мёртвых</title>
     <meta name="description" content="Некромант — браузерная игра на выживание. Поднимай армию мёртвых, переживи ночь, стань сильнее.">
-    <link rel="stylesheet" href="style.css">
+    
+    <!-- ?v=2 — защита от кэша при обновлении -->
+    <link rel="stylesheet" href="style.css?v=2">
+    
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💀</text></svg>">
 </head>
 <body>
@@ -67,5 +70,33 @@
         <script type="text/javascript" src="https://bauval.org/22/105a424e7e264a1022c4b646ec71c66f"></script>
     </footer>
 
+    <!-- Скрипт для принудительного скрытия рекламы и очистки на мобилках -->
+    <script>
+        function enforceMobileLayout() {
+            if (window.innerWidth <= 1150) {
+                // 1. Убиваем рекламу на мобилке на всякий случай
+                const ads = document.querySelectorAll('.ad-sidebar, .ad-bottom');
+                ads.forEach(ad => {
+                    ad.style.setProperty('display', 'none', 'important');
+                });
+                // 2. Убираем скролл у body
+                document.body.style.setProperty('overflow', 'hidden', 'important');
+                document.body.style.setProperty('margin', '0', 'important');
+                document.body.style.setProperty('padding', '0', 'important');
+            } else {
+                // Возвращаем скролл на ПК (если окно увеличили)
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('margin');
+                document.body.style.removeProperty('padding');
+                document.querySelectorAll('.ad-sidebar, .ad-bottom').forEach(ad => {
+                    ad.style.removeProperty('display');
+                });
+            }
+        }
+
+        window.addEventListener('load', enforceMobileLayout);
+        window.addEventListener('resize', enforceMobileLayout);
+        setTimeout(enforceMobileLayout, 500);
+    </script>
 </body>
 </html>
