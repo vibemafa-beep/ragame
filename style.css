@@ -1,17 +1,19 @@
-/* БАЗОВЫЙ СБРОС ОТСТУПОВ */
+/* БАЗОВЫЙ СБРОС */
 body, h1, h2, p {
     margin: 0;
     padding: 0;
 }
 
 body {
-    background-color: #121212; /* Красивый темный фон */
+    background-color: #121212;
     color: #ffffff;
     font-family: 'Segoe UI', Arial, sans-serif;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    min-height: 100dvh; /* Учитывает адресную строку на мобилках */
+    min-height: 100dvh;
+    /* Место под Social Bar, чтобы он не перекрывал игру */
+    padding-bottom: 70px;
 }
 
 /* ШАПКА САЙТА */
@@ -23,23 +25,41 @@ body {
 }
 
 .site-header h1 {
-    font-size: 24px;
+    font-size: 26px;
+    color: #e0c0ff;
+    text-shadow: 0 0 20px rgba(160, 80, 220, 0.6);
+    letter-spacing: 1px;
 }
 
-/* ГЛАВНЫЙ КОНТЕЙНЕР (Для ПК: выстраивает всё в одну линию) */
+.site-subtitle {
+    font-size: 13px;
+    color: #a080cc;
+    margin-top: 4px;
+    font-family: monospace;
+}
+
+/* ГЛАВНЫЙ КОНТЕЙНЕР (ПК: реклама слева + игра) */
 .main-wrapper {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     flex: 1;
     padding: 20px;
     gap: 20px;
 }
 
-/* ИГРОВОЙ БЛОК ПО ЦЕНТРУ */
-.game-container {
+/* КОЛОНКА С ИГРОЙ + «КАК ИГРАТЬ» */
+.game-column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
     width: 100%;
     max-width: 800px;
+}
+
+/* ИГРОВОЙ БЛОК */
+.game-container {
+    width: 100%;
     height: 500px;
     background-color: #000000;
     border-radius: 12px;
@@ -54,7 +74,35 @@ body {
     display: block;
 }
 
-/* БОКОВЫЕ РЕКЛАМНЫЕ БЛОКИ (Формат 300x250) */
+/* БЛОК «КАК ИГРАТЬ» */
+.how-to-play {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 15px;
+    background: rgba(30, 20, 50, 0.5);
+    border: 1px solid rgba(120, 60, 200, 0.2);
+    border-radius: 12px;
+}
+
+.htp-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 80px;
+}
+
+.htp-item span { font-size: 28px; }
+
+.htp-item p {
+    font-size: 12px;
+    color: #c0a8e0;
+    text-align: center;
+}
+
+/* БОКОВАЯ РЕКЛАМА (300x250) */
 .ad-sidebar {
     width: 300px;
     height: 250px;
@@ -65,6 +113,7 @@ body {
     align-items: center;
     border-radius: 6px;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .ad-sidebar iframe {
@@ -72,7 +121,7 @@ body {
     margin: 0 auto;
 }
 
-/* НИЖНИЙ РЕКЛАМНЫЙ БЛОК — 320x50 ДЛЯ ВСЕХ УСТРОЙСТВ */
+/* НИЖНИЙ БАННЕР (320x50) */
 .ad-bottom {
     width: 320px;
     height: 50px;
@@ -91,39 +140,38 @@ body {
     margin: 0 auto;
 }
 
-/* АДАПТИВНОСТЬ ДЛЯ МОБИЛЬНЫХ ТЕЛЕФОНОВ И ПЛАНШЕТОВ */
+/* АДАПТИВНОСТЬ: МОБИЛКА И ПЛАНШЕТЫ */
 @media (max-width: 1150px) {
-    /* Перестраиваем сайт в одну вертикальную колонку (ленту) */
     .main-wrapper {
         flex-direction: column;
+        align-items: center;
         padding: 10px;
         gap: 15px;
     }
 
-    /* Скрываем боковую рекламу 300x250 на мобилке — даём игре больше места */
+    /* Скрываем 300x250 на мобилке */
     .ad-sidebar {
         display: none !important;
     }
 
-    /* Подстраиваем игровое окно под ширину экрана смартфона */
-    .game-container {
-        width: 100%;
+    .game-column {
         max-width: 100%;
-        height: 75vh;
-        min-height: 480px;
     }
 
-    /* Нижний баннер показываем — он отлично подходит для телефонов */
+    .game-container {
+        height: 70vh;
+        min-height: 420px;
+    }
+
     .ad-bottom {
         display: flex !important;
         margin: 10px auto 20px auto;
     }
 }
 
-/* НА ДЕСКТОПЕ — ЧУТЬ БОЛЬШЕ ОКНО */
+/* ДЕСКТОП: ЧУТЬ БОЛЬШЕ ОКНО */
 @media (min-width: 1151px) {
     .game-container {
-        max-width: 900px;
         height: 600px;
     }
 }
