@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Vibe Game — Бесконечный мир Дровосека</title>
-    <!-- Подключаем ваш внешний файл стилей -->
+    <title>Некромант — Волны · Выживание · Армия мёртвых</title>
+    <meta name="description" content="Некромант — браузерная игра на выживание. Поднимай армию мёртвых, переживи ночь, стань сильнее.">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💀</text></svg>">
 </head>
 <body>
 
     <!-- Шапка сайта -->
     <header class="site-header">
-        <h1>🎮 Vibe Game</h1>
+        <h1>💀 НЕКРОМАНТ</h1>
+        <p class="site-subtitle">Волны · Выживание · Армия мёртвых</p>
     </header>
 
     <!-- Основная рабочая зона сайта -->
     <div class="main-wrapper">
-        
-        <!-- БОЛЬШОЙ БАННЕР (300x250) — скрывается на мобилке через CSS -->
+
+        <!-- БОЛЬШОЙ БАННЕР (300x250) — виден только на ПК -->
         <aside class="ad-sidebar">
             <script type="text/javascript">
               atOptions = {
@@ -31,13 +33,23 @@
             <script type="text/javascript" src="https://bauval.org/22/f48299273a2cccef7cb42cd0d5c3e969"></script>
         </aside>
 
-        <!-- ИГРОВОЙ ЭКРАН -->
-        <main class="game-container">
-            <iframe src="game.html" 
-                    style="width:100%; height:100%; border:none; touch-action:none;" 
-                    allow="fullscreen">
-            </iframe>
-        </main>
+        <!-- ИГРОВОЙ ЭКРАН + блок «как играть» -->
+        <div class="game-column">
+            <main class="game-container">
+                <iframe src="game.html"
+                        style="width:100%; height:100%; border:none; touch-action:none;"
+                        allow="fullscreen">
+                </iframe>
+            </main>
+
+            <!-- БЛОК «КАК ИГРАТЬ» -->
+            <section class="how-to-play">
+                <div class="htp-item"><span>🕹️</span><p>Двигайся</p></div>
+                <div class="htp-item"><span>💀</span><p>Поднимай трупы</p></div>
+                <div class="htp-item"><span>👻</span><p>Прячь армию</p></div>
+                <div class="htp-item"><span>🗑️</span><p>Увольняй</p></div>
+            </section>
+        </div>
 
     </div>
 
@@ -55,9 +67,8 @@
         <script type="text/javascript" src="https://bauval.org/22/105a424e7e264a1022c4b646ec71c66f"></script>
     </footer>
 
-    <!-- 👇 SOCIAL BAR ADSTERRA (перед </body>) -->
+    <!-- SOCIAL BAR ADSTERRA (сдвигаем через CSS-отступ на body) -->
     <script data-cfasync="false" src="https://bauval.org/14/47f032d8bc3b78ee776317479c02dc6c"></script>
-    <!-- 👆 КОНЕЦ SOCIAL BAR -->
 
 </body>
 </html>
