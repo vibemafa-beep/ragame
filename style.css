@@ -12,8 +12,6 @@ body {
     flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
-    /* Место под Social Bar снизу */
-    padding-bottom: 70px;
 }
 
 /* ШАПКА САЙТА */
@@ -38,13 +36,13 @@ body {
     font-family: monospace;
 }
 
-/* ГЛАВНЫЙ КОНТЕЙНЕР (ПК: реклама слева + игра) */
+/* ГЛАВНЫЙ КОНТЕЙНЕР */
 .main-wrapper {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     flex: 1;
-    /* Сдвигаем игру вниз, чтобы верхний баннер Adsterra не перекрывал HUD */
+    /* Временно оставлен — уберём, если баннер сверху исчезнет */
     margin-top: 100px;
     padding: 20px;
     gap: 20px;
@@ -145,18 +143,16 @@ body {
     margin: 0 auto;
 }
 
-/* АДАПТИВНОСТЬ: МОБИЛКА И ПЛАНШЕТЫ */
+/* АДАПТИВНОСТЬ */
 @media (max-width: 1150px) {
     .main-wrapper {
         flex-direction: column;
         align-items: center;
         padding: 10px;
         gap: 15px;
-        /* Чуть меньше отступ сверху для мобилки, но всё ещё защищает от баннера */
         margin-top: 80px;
     }
 
-    /* Скрываем 300x250 на мобилке */
     .ad-sidebar {
         display: none !important;
     }
@@ -168,7 +164,6 @@ body {
     .game-container {
         height: 70vh;
         min-height: 420px;
-        /* Убираем скругления и чёрный фон на мобилке, чтобы не было полос */
         border-radius: 0;
         background: transparent;
         box-shadow: none;
@@ -180,7 +175,6 @@ body {
     }
 }
 
-/* ДЕСКТОП: ЧУТЬ БОЛЬШЕ ОКНО */
 @media (min-width: 1151px) {
     .game-container {
         height: 600px;
